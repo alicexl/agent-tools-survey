@@ -1,0 +1,8 @@
+# 第三方源码浅 clone（仅本地调研阅读用，不入库）
+repos/
+
+# 打印管线中间产物
+report/report_new.pdf
+
+__pycache__/
+*.pyc

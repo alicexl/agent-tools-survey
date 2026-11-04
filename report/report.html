@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Agent 开发工具的分层定位与企业选型调研报告</title>
+<style>
+  @page {
+    size: A4;
+    margin: 16mm 16mm 16mm 16mm;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: Inter, "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei", sans-serif;
+    font-size: 10.5pt; line-height: 1.5; color: #1a1a1a; margin: 0;
+  }
+  h1 { font-size: 20pt; line-height: 1.3; margin: 0 0 6pt; color: #0d2b45; }
+  h2 { font-size: 16pt; line-height: 1.3; color: #0d2b45; border-bottom: 1.5pt solid #0d2b45; padding-bottom: 4pt; margin: 20pt 0 10pt; page-break-after: avoid; }
+  h3 { font-size: 12.5pt; line-height: 1.35; color: #14425f; margin: 15pt 0 7pt; page-break-after: avoid; }
+  h4 { font-size: 10.8pt; color: #1c5a7a; margin: 11pt 0 5pt; page-break-after: avoid; }
+  p { margin: 6pt 0; text-align: justify; }
+  .subtitle { color: #555; font-size: 11pt; margin-bottom: 2pt; }
+  .meta { color: #777; font-size: 9pt; border: 0.8pt solid #dde3ea; border-radius: 4pt; padding: 6pt 10pt; background: #f8f9fa; margin: 10pt 0; }
+  table { border-collapse: collapse; width: 100%; margin: 8pt 0; font-size: 9pt; line-height: 1.45; }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; }
+  th { background: #e9eff5; color: #0d2b45; padding: 4pt 6pt; text-align: left; font-weight: 700; border-bottom: 1pt solid #9db4c8; }
+  td { border: 0.5pt solid #dde3ea; padding: 3.5pt 6pt; vertical-align: top; }
+  tr:nth-child(even) td { background: #f6f8fa; }
+  code, .path { font-family: Consolas, "Courier New", monospace; font-size: 8.6pt; background: #eef2f6; padding: 0.5pt 3pt; border-radius: 2.5pt; color: #0f3a5d; }
+  .src { color: #667; font-size: 8.2pt; font-family: Consolas, monospace; }
+  a { color: #14425f; text-decoration: none; border-bottom: 0.6pt dotted #7894ab; }
+  .box { border: none; border-left: 3pt solid #14425f; background: #f4f8fb; padding: 7pt 10pt; margin: 8pt 0; border-radius: 0 2pt 2pt 0; page-break-inside: avoid; }
+  .box .bt { font-weight: 700; color: #14425f; page-break-after: avoid; }
+  .box.warn { border-left-color: #b0531f; background: #fdf6f0; }
+  .box.good { border-left-color: #1f7a4d; background: #f0f8f3; }
+  .box p { margin: 3pt 0; }
+  ul, ol { margin: 6pt 0 6pt 0; padding-left: 16pt; }
+  li { margin: 3.5pt 0; text-align: justify; }
+  .pagebreak { page-break-before: always; }
+  .avoid { page-break-inside: avoid; }
+  figure { margin: 10pt 0; page-break-inside: avoid; text-align: center; }
+  figcaption { font-size: 8.8pt; color: #556; margin-top: 4pt; text-align: center; }
+  .tag { display: inline-block; font-size: 7.8pt; padding: 0.5pt 5pt; border-radius: 7pt; color: #fff; background: #456990; vertical-align: 1pt; }
+  .verdict { font-weight: 700; color: #0d2b45; }
+  .neg { color: #b0531f; }
+  .pos { color: #1f7a4d; }
+  .small { font-size: 8.6pt; color: #556; }
+  svg text { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; }
+  @media screen {
+    html { background: #e9edf1; }
+    body {
+      max-width: 940px; margin: 24px auto; padding: 36px 48px;
+      background: #fff; border-radius: 6px;
+      box-shadow: 0 2px 20px rgba(13,43,69,.13);
+    }
+    p { margin: 8px 0; }
+    h2 { margin-top: 30px; }
+    h3 { margin-top: 20px; }
+    table { margin: 10px 0; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Agent 开发工具的分层定位与企业选型调研</h1>
+<p class="subtitle">七个"都能做 Agent"的工具：LangChain/LangGraph、Pydantic-AI、OpenClaw、Nous Hermes-Agent、DeepSeek Harness (dsh)、Codex CLI、Pi</p>
+<div class="meta">
+调研时间窗：<b>2026-11-03</b>（单一时点快照）｜
+方法：GitHub API 直连核实 + 官方文档精读 + 三代表工具源码级深读
+</div>
+
+<h2>目录</h2>
+<table class="toc">
+<tr><td class="n"><a href="#sec-0">0</a></td><td><a href="#sec-0">结论摘要（含七工具总览矩阵）</a></td></tr>
+<tr><td class="n"><a href="#sec-1">1</a></td><td><a href="#sec-1">存在性核实</a></td></tr>
+<tr><td class="n"><a href="#sec-2">2</a></td><td><a href="#sec-2">分层定位与关系图</a>　<a href="#sec-2-1">2.1 三层定位表与归层依据</a>　<a href="#sec-2-2">2.2 关系图与 MCP/ACP 方向明细</a>　<a href="#sec-2-3">2.3 跨层直比为何误导与比较方法</a></td></tr>
+<tr><td class="n"><a href="#sec-3">3</a></td><td><a href="#sec-3">架构与核心抽象（能力状态四态 · 七维度统一定义）</a>　<a href="#sec-3-1">3.1 LangGraph</a>　<a href="#sec-3-2">3.2 Codex CLI</a>　<a href="#sec-3-3">3.3 OpenClaw</a>　<a href="#sec-3-4">3.4 其余五工具简述</a></td></tr>
+<tr><td class="n"><a href="#sec-4">4</a></td><td><a href="#sec-4">企业落地考量</a>　<a href="#sec-4-1">4.1 安全</a>　<a href="#sec-4-2">4.2 合规</a>　<a href="#sec-4-3">4.3 成本</a>　<a href="#sec-4-4">4.4 维护成熟度</a>　<a href="#sec-4-5">4.5 国内可用性</a></td></tr>
+<tr><td class="n"><a href="#sec-5">5</a></td><td><a href="#sec-5">场景选型建议</a>（<a href="#sec-5-1">5.1 内网合规问答</a> · <a href="#sec-5-2">5.2 高并发客服</a> · <a href="#sec-5-3">5.3 研发助手</a> · <a href="#sec-5-4">5.4 长期记忆助理</a>）　<a href="#sec-5-5">5.5 题目 2 选型论证</a></td></tr>
+<tr><td class="n"><a href="#sec-6">6</a></td><td><a href="#sec-6">附录</a>　<a href="#sec-6-1">6.1 调研方法</a>　<a href="#sec-6-2">6.2 "查无实据"核实记录</a>　<a href="#sec-6-3">6.3 信息源与版本锚定</a></td></tr>
+</table>
+<p class="small">目录条目可点击跳转；正文中源码与文档引用挂有永久链接（见 <a href="#sec-6-3">§6.3</a> 版本锚定表）。</p>
+
+<h2 id="sec-0">0 结论摘要</h2>
+
+<p>本报告对题目指定的 7 个工具逐一做了存在性核实与文档级调研，并对每层一个代表——库层 LangGraph、Harness 层 Codex CLI、产品层 OpenClaw——完成源码深读（其余工具对照简述，见 <a href="#sec-3-4">§3.4</a>）。三条核心发现：</p>
+
+<p><b>发现一：七者分三层，层间是上下游关系而非竞品关系。</b>库/SDK（LangChain/LangGraph、Pydantic-AI）回答"用什么造 Agent"，Runtime/Harness（Codex CLI、dsh、Pi）回答"用什么跑 Agent"，成品/产品（OpenClaw、Hermes-Agent）回答"直接用哪个助手"。跨层直比会误导选型，公平比较方法是分层各回答一个问题（归层依据与关系图见 <a href="#sec-2">§2</a>）。</p>
+
+<p><b>发现二：能力开箱程度随层级上升，定制空间随之收窄。</b>产品层开箱即是能用的助手（长期记忆、20+ 消息渠道），harness 层把执行隔离与审批做得最完整（Codex 沙箱内核级三平台），库层可控性最强、但沙箱与审批须完全自建（长期记忆仅 LangGraph Store 内置）。这是分工而非差距，本报告按四态（已实现／默认启用／实验性·可选／未实现）如实标注（七维度深析见 <a href="#sec-3">§3</a>）。</p>
+
+<p><b>发现三：企业落地的门槛不在许可证与模型接入，而在治理配套。</b>七者许可证均为 MIT/Apache-2.0，国产模型接入均有原生路径；真正普遍缺失的是权限治理与审计的产品化——OpenClaw 官方明示单一信任域，Codex 审批档位不等同企业 RBAC，金融级落地都须在工具之外补齐治理层（五维度评估见 <a href="#sec-4">§4</a>）。</p>
+
+<p><b>七工具总览</b>——30 秒建立整体认知，拆为架构对比与沙箱/协议两张表（口径：长期记忆按四态标注见 <a href="#sec-3">§3</a>，MCP/ACP 按角色标注、方向明细见 <a href="#sec-2-2">§2.2</a>）：</p>
+<table>
+<thead><tr><th style="width:24%">工具（架构对比）</th><th style="width:12%">分层</th><th style="width:20%">状态管理</th><th style="width:24%">长期记忆</th><th style="width:20%">HITL</th></tr></thead>
+<tr><td><b>LangChain/LangGraph</b></td><td>SDK</td><td>Checkpoint</td><td>Store（跨会话）</td><td>interrupt / Command</td></tr>
+<tr><td><b>Pydantic-AI</b></td><td>SDK</td><td>会话存储</td><td>未实现（配套包不计入）</td><td>Deferred Tools</td></tr>
+<tr><td><b>dsh</b></td><td>Harness</td><td>事件溯源日志</td><td>未内置（仅 MCP 参考）</td><td>双旋钮审批</td></tr>
+<tr><td><b>Codex CLI</b></td><td>Harness</td><td>Rollout JSONL</td><td>已实现、默认关闭</td><td>两轴 + granular</td></tr>
+<tr><td><b>Pi</b></td><td>Harness</td><td>JSONL 会话树</td><td>未实现（哲学：自建/装包）</td><td>扩展实现（无内置）</td></tr>
+<tr><td><b>OpenClaw</b></td><td>产品</td><td>SQLite 会话库</td><td>较完整（五层+溯源）</td><td>渠道内审批</td></tr>
+<tr><td><b>Hermes</b></td><td>产品</td><td>SQLite + WAL</td><td>较完整（文件式+FTS5）</td><td>三档 + 硬底线</td></tr>
+</table>
+<table>
+<thead><tr><th style="width:24%">工具（沙箱与协议）</th><th style="width:28%">沙箱</th><th style="width:28%">MCP</th><th style="width:20%">ACP</th></tr></thead>
+<tr><td><b>LangChain/LangGraph</b></td><td>自建</td><td>Client</td><td>—</td></tr>
+<tr><td><b>Pydantic-AI</b></td><td>自建</td><td>Client（+FastMCP 打包 Server）</td><td>—</td></tr>
+<tr><td><b>dsh</b></td><td>原生三平台（Win 不完整）</td><td>Client</td><td>ACP Server</td></tr>
+<tr><td><b>Codex CLI</b></td><td>内核级三平台（最强）</td><td>Client（Server 已移除）</td><td>—</td></tr>
+<tr><td><b>Pi</b></td><td>外部容器</td><td>Client（内置客户端可换）</td><td>—</td></tr>
+<tr><td><b>OpenClaw</b></td><td>可选（默认关）</td><td>Client + Server</td><td>ACP Host</td></tr>
+<tr><td><b>Hermes</b></td><td>多后端（local→云沙箱）</td><td>Client</td><td>ACP Server</td></tr>
+</table>
+
+<p><b>四场景推荐结论</b>（论证见 <a href="#sec-5">§5</a>）：(a) 金融机构内网合规问答 → 库层自建 RAG + 内网模型；(b) C 端高并发客服 → 库层做无状态服务；(c) 研发编码运维助手 → Codex CLI 为当前生产工具（配企业策略管理）、dsh 为国产化 Runtime 的 PoC / 二次开发候选；(d) 长期记忆助理 → 国内生态 Hermes-Agent、国际渠道 OpenClaw 二选一。题目 2（招股书问答 Agent）选型：Pydantic-AI + 自建确定性层 + 国产模型实测选型（论证见 <a href="#sec-5-5">§5.5</a>）。</p>
+
+<h2 id="sec-1">1 存在性核实</h2>
+
+<p>第一步对全部 7 个指代做存在性核实（GitHub API + 官网 + npm/PyPI 注册表双通道互证），结果汇总如下：</p>
+
+<table>
+<thead><tr><th>工具</th><th>核实指代（org/repo）</th><th>存在性</th><th>最新 release</th><th>许可证</th></tr></thead>
+<tr><td><b>LangChain</b></td><td class="src">langchain-ai/langchain</td><td>✅ 存在</td><td>多包分别发版（列 core 1.7.4）</td><td>MIT</td></tr>
+<tr><td><b>LangGraph</b></td><td class="src">langchain-ai/langgraph</td><td>✅ 存在</td><td>1.2.19</td><td>MIT</td></tr>
+<tr><td><b>Pydantic-AI</b></td><td class="src">pydantic/pydantic-ai</td><td>✅ 存在</td><td>v2.65.0</td><td>MIT</td></tr>
+<tr><td><b>OpenClaw</b></td><td class="src">openclaw/openclaw</td><td>✅ 存在</td><td>v2026.10.3</td><td>MIT</td></tr>
+<tr><td><b>Hermes-Agent</b></td><td class="src">NousResearch/hermes-agent</td><td>✅ 存在</td><td>v0.22.6（11-02）</td><td>MIT</td></tr>
+<tr><td><b>DeepSeek Harness</b></td><td class="src">deepseek-ai/deepseek-harness</td><td>✅ 存在</td><td>dsh-v0.2.2-alpha.3（11-03）</td><td>MIT</td></tr>
+<tr><td><b>Codex CLI</b></td><td class="src">openai/codex</td><td>✅ 存在</td><td>rust-v0.166.0</td><td>Apache-2.0</td></tr>
+<tr><td><b>Pi</b></td><td class="src">earendil-works/pi</td><td>✅ 存在</td><td>v1.5.0（11-02）</td><td>MIT</td></tr>
+</table>
+
+<p><b>口径声明：</b>三个深读代表使用当日 main 分支并锚定 commit：<a href="https://github.com/langchain-ai/langgraph/tree/3c916d750575b22c464790e9774494d810ccd322"><code>LangGraph 3c916d7</code></a>、<a href="https://github.com/openai/codex/tree/bfdbf01"><code>Codex CLI bfdbf01</code></a>、<a href="https://github.com/openclaw/openclaw/tree/4285c6ce"><code>OpenClaw 4285c6ce</code></a>（2026-11-03）。正文源码引用给出相对仓库根的文件路径，行号与完整清单见随附调研卡；关键论断处挂源码永久链接（permalink），全部版本锚定见 <a href="#sec-6-3">§6.3</a>。</p>
+
+<h2 id="sec-2" class="pagebreak">2 分层定位与关系图</h2>
+
+<h3 id="sec-2-1">2.1 三层定位表与归层依据</h3>
+
+<p>本题采用题目建议的三层划分，判层标准是<b>交付物形态</b>：库/SDK 是 <code>pip/npm install</code>、进程内嵌入的代码；Runtime/Harness 是可运行的 agent 执行框架（CLI/守护进程），自带循环、工具、审批但通常不面向最终用户；成品/产品是终端用户直接使用的助手（聊天渠道、桌面/移动端）。归层依据如下：</p>
+
+<table>
+<thead><tr><th style="width:16%">工具</th><th style="width:11%">层级</th><th style="width:73%">归层依据（形态与代码证据）</th></tr></thead>
+<tr>
+<td><b>LangChain / LangGraph</b></td>
+<td><span class="tag lib">库/SDK</span></td>
+<td>安装即库、无守护进程无产品 UI。LangChain 是较高层框架（标准 Agent Loop + Middleware，<code>create_agent</code> 基于 LangGraph Runtime），LangGraph 可独立使用、提供底层有状态执行与编排（状态/持久化/恢复/中断）。</td>
+</tr>
+<tr>
+<td><b>Pydantic-AI</b></td>
+<td><span class="tag lib">库/SDK</span></td>
+<td>纯库进程内运行、无强制服务端；持久化 schema 留给用户。<b>本题仅评核心库</b> <code>pydantic-ai(-slim)</code>，配套包与商业平台 Logfire 不计入。</td>
+</tr>
+<tr>
+<td><b>DeepSeek Harness (dsh)</b></td>
+<td><span class="tag harness">Runtime/Harness</span></td>
+<td>不自带开箱业务 Agent，提供会话、agent-loop、工具注册表、沙箱、审批等运行时底座；<code>dsh</code> 按 profile 启动 web / headless / sdk / acp 四形态。</td>
+</tr>
+<tr>
+<td><b>Codex CLI</b></td>
+<td><span class="tag harness">Runtime/Harness</span></td>
+<td>自带 TUI、工具循环、沙箱、审批、会话持久化——是"跑 agent 的壳"，非嵌入库、非托管服务。</td>
+</tr>
+<tr>
+<td><b>Pi</b></td>
+<td><span class="tag harness">Runtime/Harness</span></td>
+<td>monorepo 分层：pi-ai / pi-agent-core 是库，pi-coding-agent 是 CLI，pi-durable 是 durable 执行 harness；默认交付物是 CLI harness，故归 harness 层。</td>
+</tr>
+<tr>
+<td><b>OpenClaw</b></td>
+<td><span class="tag product">成品/产品</span></td>
+<td>20+ 聊天渠道 + 桌面/移动客户端的个人助理形态；交付物与默认用法是产品，故归产品层。</td>
+</tr>
+<tr>
+<td><b>Hermes-Agent</b></td>
+<td><span class="tag product">成品/产品</span></td>
+<td>交付物是装好即用的助手：CLI/TUI + Desktop + Web dashboard + 20 余消息平台机器人（含微信/企微/钉钉/飞书/QQ）。</td>
+</tr>
+</table>
+
+<h3 id="sec-2-2">2.2 关系图：嵌入、后端/模型提供、协议互通</h3>
+
+<figure>
+<svg viewBox="0 0 720 700" width="100%" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="aNavy" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 z" fill="#14425f"/></marker>
+    <marker id="aOrange" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 z" fill="#b0531f"/></marker>
+    <marker id="aGreen" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 z" fill="#1f7a4d"/></marker>
+    <marker id="aGreenR" markerWidth="9" markerHeight="8" refX="1" refY="4" orient="auto"><path d="M9,0 L0,4 L9,8 z" fill="#1f7a4d"/></marker>
+    <marker id="aGray" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto"><path d="M0,0 L9,4 L0,8 z" fill="#777"/></marker>
+  </defs>
+
+  <!-- 泳道 1：库/SDK -->
+  <rect x="50" y="28" width="620" height="104" rx="8" fill="#eaf4ee" stroke="#9cc7ae" stroke-width="0.8"/>
+  <text x="62" y="48" font-size="11" fill="#1f7a4d" font-weight="700">① 开发库 / SDK 层</text>
+  <rect x="62" y="60" width="176" height="54" rx="5" fill="#fff" stroke="#1f7a4d" stroke-width="1.2"/>
+  <text x="150" y="91" font-size="13" font-weight="700" text-anchor="middle" fill="#123">LangChain</text>
+  <rect x="262" y="60" width="150" height="54" rx="5" fill="#fff" stroke="#1f7a4d" stroke-width="1.2"/>
+  <text x="337" y="91" font-size="13" font-weight="700" text-anchor="middle" fill="#123">LangGraph</text>
+  <rect x="440" y="60" width="168" height="54" rx="5" fill="#fff" stroke="#1f7a4d" stroke-width="1.2"/>
+  <text x="524" y="91" font-size="13" font-weight="700" text-anchor="middle" fill="#123">Pydantic-AI</text>
+  <line x1="238" y1="87" x2="262" y2="87" stroke="#14425f" stroke-width="1.8" marker-end="url(#aNavy)"/>
+
+  <!-- 泳道 2：Harness -->
+  <rect x="50" y="160" width="620" height="104" rx="8" fill="#e8f0f7" stroke="#8fb0cc" stroke-width="0.8"/>
+  <text x="62" y="180" font-size="11" fill="#14425f" font-weight="700">② Agent 运行时 / Harness 层</text>
+  <rect x="62" y="192" width="170" height="54" rx="5" fill="#fff" stroke="#14425f" stroke-width="1.2"/>
+  <text x="147" y="223" font-size="13" font-weight="700" text-anchor="middle" fill="#123">Codex CLI</text>
+  <rect x="262" y="192" width="150" height="54" rx="5" fill="#fff" stroke="#14425f" stroke-width="1.2"/>
+  <text x="337" y="223" font-size="13" font-weight="700" text-anchor="middle" fill="#123">Pi</text>
+  <rect x="440" y="192" width="168" height="54" rx="5" fill="#fff" stroke="#14425f" stroke-width="1.2"/>
+  <text x="524" y="223" font-size="12.5" font-weight="700" text-anchor="middle" fill="#123">DeepSeek Harness</text>
+
+  <!-- 泳道 3：产品 -->
+  <rect x="50" y="292" width="620" height="104" rx="8" fill="#fdf0e7" stroke="#d8ab8a" stroke-width="0.8"/>
+  <text x="62" y="312" font-size="11" fill="#b0531f" font-weight="700">③ 成品 / 助手产品层</text>
+  <rect x="163" y="324" width="160" height="54" rx="5" fill="#fff" stroke="#b0531f" stroke-width="1.2"/>
+  <text x="243" y="355" font-size="13" font-weight="700" text-anchor="middle" fill="#123">OpenClaw</text>
+  <rect x="371" y="324" width="186" height="54" rx="5" fill="#fff" stroke="#b0531f" stroke-width="1.2"/>
+  <text x="464" y="355" font-size="13" font-weight="700" text-anchor="middle" fill="#123">Hermes-Agent</text>
+
+  <!-- 嵌入边 -->
+  <line x1="183" y1="324" x2="140" y2="246" stroke="#14425f" stroke-width="2" marker-end="url(#aNavy)"/>
+  <line x1="283" y1="324" x2="320" y2="246" stroke="#14425f" stroke-width="1.6" stroke-dasharray="6,3" marker-end="url(#aNavy)"/>
+
+  <!-- harness 层内部：dsh 可把 Codex 当 subagent provider -->
+  <path d="M 524 192 Q 335 80 147 192" fill="none" stroke="#14425f" stroke-width="1.4" marker-end="url(#aNavy)"/>
+
+  <!-- 竞品边 -->
+  <line x1="323" y1="351" x2="371" y2="351" stroke="#1f7a4d" stroke-width="1.6" stroke-dasharray="4,3" marker-start="url(#aGreenR)" marker-end="url(#aGreen)"/>
+
+  <!-- 协议总线 -->
+  <rect x="50" y="424" width="620" height="46" rx="8" fill="#fff8ec" stroke="#b0531f" stroke-width="1" stroke-dasharray="6,3"/>
+  <text x="360" y="451" font-size="13" font-weight="700" fill="#b0531f" text-anchor="middle">协议互通总线：MCP 全员接入 · ACP 三家（方向明细见下表）</text>
+
+  <!-- 总线下挂 -->
+  <line x1="150" y1="470" x2="150" y2="494" stroke="#b0531f" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#aOrange)"/>
+  <rect x="50" y="494" width="200" height="34" rx="5" fill="#fff" stroke="#b0531f" stroke-width="1"/>
+  <text x="150" y="515" font-size="10.5" text-anchor="middle" fill="#123">MCP Servers 生态</text>
+  <line x1="360" y1="470" x2="360" y2="494" stroke="#b0531f" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#aOrange)"/>
+  <rect x="260" y="494" width="200" height="34" rx="5" fill="#fff" stroke="#b0531f" stroke-width="1"/>
+  <text x="360" y="515" font-size="10.5" text-anchor="middle" fill="#123">编辑器 / IDE</text>
+  <line x1="570" y1="470" x2="570" y2="494" stroke="#b0531f" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#aOrange)"/>
+  <rect x="470" y="494" width="200" height="34" rx="5" fill="#fff" stroke="#b0531f" stroke-width="1"/>
+  <text x="570" y="515" font-size="10.5" text-anchor="middle" fill="#123">OpenAI 兼容客户端</text>
+
+  <!-- 模型层 -->
+  <line x1="360" y1="528" x2="360" y2="556" stroke="#777" stroke-width="1.8" stroke-dasharray="2,3" marker-end="url(#aGray)"/>
+  <rect x="50" y="556" width="620" height="112" rx="8" fill="#f5f5f5" stroke="#999" stroke-width="0.8"/>
+  <text x="62" y="576" font-size="11" fill="#555" font-weight="700">模型提供方</text>
+  <rect x="50" y="586" width="200" height="66" rx="5" fill="#fff" stroke="#888" stroke-width="1"/>
+  <text x="150" y="622" font-size="11" font-weight="700" text-anchor="middle" fill="#123">境外模型 API</text>
+  <rect x="260" y="586" width="200" height="66" rx="5" fill="#fff" stroke="#c49a6a" stroke-width="1.3"/>
+  <text x="360" y="622" font-size="11" font-weight="700" text-anchor="middle" fill="#123">国产模型 API</text>
+  <rect x="470" y="586" width="200" height="66" rx="5" fill="#fff" stroke="#888" stroke-width="1"/>
+  <text x="570" y="622" font-size="11" font-weight="700" text-anchor="middle" fill="#123">本地推理</text>
+</svg>
+<figcaption>图 1：七个工具的分层与关系。实线深蓝=原生 Runtime 插件（OpenClaw×Codex）；虚线深蓝=外部 ACP 接入（OpenClaw×Pi）；虚线橙=协议互通；双向虚线绿=同层竞品；点线灰=模型提供关系。</figcaption>
+</figure>
+
+<ul>
+<li><b>蓝色实/虚线（嵌入）</b>：LangChain 的 <code>create_agent</code> 基于 LangGraph Runtime；产品层 → Codex（实线）＝实现 OpenClaw harness 契约的原生插件，产品层 → Pi（虚线）＝经 acpx 以 ACP 启动外部 Agent；harness 层内弧线＝dsh 可把 Codex CLI 当 subagent provider。</li>
+<li><b>绿/橙/灰线</b>：绿色双向虚线＝OpenClaw 与 Hermes-Agent 同层竞品（Hermes 提供迁移器）；橙色虚线＝协议互通总线（方向明细见下表）；灰色点线＝模型提供关系，harness/产品层模型无关。</li>
+</ul>
+
+<p><b>MCP / ACP 方向明细</b>——两个协议的角色不可混用：MCP 的 Client 消费外部 Server 的工具、Server 把自身能力暴露给外部 Agent；ACP 的语义是<b>客户端启动并管理 Agent</b>——Agent Server 向 IDE 等客户端提供 Agent 服务，Host/Client 反向启动外部 Agent。七个项目的实际实现方向：</p>
+<table class="avoid">
+<thead><tr><th style="width:17%">项目</th><th style="width:31%">MCP Client（接入外部 Server）</th><th style="width:24%">MCP Server（对外暴露）</th><th style="width:28%">ACP 角色</th></tr></thead>
+<tr><td><b>LangChain/LangGraph</b></td><td>✅ <code>langchain[mcp]</code>（MCP 工具转 LangChain 工具）</td><td>—</td><td>—</td></tr>
+<tr><td><b>Pydantic-AI</b></td><td>✅ stdio/HTTP + FastMCPToolset</td><td>✅ 以 FastMCP 把 agent 打包为 MCP 工具</td><td>—</td></tr>
+<tr><td><b>dsh</b></td><td>✅ opt-in（<code>dsh-mcp-client</code>，子进程剥离凭据）</td><td>—</td><td><b>Agent Server</b>：<code>--profile acp</code> 供 Zed 等 IDE 调用</td></tr>
+<tr><td><b>Codex CLI</b></td><td>✅ <code>[mcp_servers]</code> 配置</td><td><span class="neg">✗ 曾提供，2026-09 官方文档确认移除</span></td><td>—</td></tr>
+<tr><td><b>Pi</b></td><td>✅ 内置自研客户端（四档 exposure 治理）</td><td>—</td><td>—</td></tr>
+<tr><td><b>OpenClaw</b></td><td>✅ <code>mcp add/doctor/probe</code></td><td>✅ <code>mcp serve</code> + Gateway 对外 OpenAI 兼容 API</td><td><b>Host/Client</b>：acpx 插件接入外部 coding harness</td></tr>
+<tr><td><b>Hermes-Agent</b></td><td>✅ <code>hermes mcp add</code></td><td>—</td><td><b>Agent Server</b>：VS Code / Zed / JetBrains 连接 Hermes</td></tr>
+</table>
+<p>七者的真实关系是可组合的依赖图，而非七个并列选项，<a href="#sec-5">§5</a> 选型建议即按"组合方案"给出。</p>
+
+<h3 id="sec-2-3">2.3 为什么跨层直比会产生误导，以及本报告的比较方法</h3>
+
+<p><b>误导一：把开发框架的灵活性，当成运行时的能力不足。</b>同做一编程任务：Codex 开箱即用，LangGraph 需先实现工具、状态与任务循环——直接比完成率会得出"Codex 更强"，但 LangGraph 提供的是<b>构建 Agent 的能力</b>，Codex 提供的是<b>已经构建好的 Agent</b>。</p>
+
+<p><b>误导二：把 Harness 的默认能力，当成底层模型的能力。</b>Codex 编码表现最好不等于其模型推理最强——Harness 的上下文组装、工具设计与反馈循环同样影响结果，比较必须控制模型变量。</p>
+
+<p><b>误导三：把成品助手的产品能力，当成 Harness 的执行能力。</b>OpenClaw 的渠道、记忆与定时体验不代表其单次推理更强（它可把其他 Harness 作为执行后端）；Codex 改代码更出色，也不代表它是更好的个人助手产品。</p>
+
+<p><b>误导四：忽略不同项目替用户承担的工程工作。</b>库层<b>构建导向</b>、harness 层<b>执行导向</b>、产品层<b>应用导向</b>——比较时还要问它已经替你实现了什么、还需补齐什么：<b>只想完成任务用产品层，要开发自己的应用用 Harness 层，要从零构建自己的 Agent 用库层。</b></p>
+
+<p><b>本报告的公平比较方法：</b>分层各回答一个问题——SDK 层谁更适合用来构建自己的 Agent？Harness 层谁的执行机制更适合自己的任务与运行环境？产品层谁能以最低的集成和运维成本持续完成目标用户的任务？统一以"七维度 × 谁负责"坐标系发问（内置/生态/留给用户三档），以组合方案而非孤立工具为比较单位（<a href="#sec-5">§5</a> 四场景均按组合给方案）。</p>
+
+<h2 class="pagebreak" id="sec-3">3 架构与核心抽象（深析 ×3 + 简述 ×5）</h2>
+
+<p>深读代表：<b>库层 LangGraph</b>、<b>Harness 层 Codex CLI</b>、<b>产品层 OpenClaw</b>。其余五工具简述见 <a href="#sec-3-4">§3.4</a>。能力状态四态：<b>已实现</b>／<b>默认启用</b>／<b>实验性·可选</b>／<b>未实现</b>——已实现不等于默认获得完整体验，两者分开表述。</p>
+<p><b>七维度统一口径</b>（统一定义见随附调研卡）：状态／记忆／工具调用／扩展机制（Plugins·Skills·Subagents·MCP·ACP 五类子概念不视为同类扩展）／HITL／可观测性／部署与许可。表述约定：每个维度按<b>机制 → 证据 → 判断</b>三句式；仅对三个最有区分度的机制深读——LangGraph 的 checkpoint（§3.1①）、Codex 的沙箱与管理员策略（§3.2⑦）、OpenClaw 的信任域与供应链（§3.3⑦及专题）。</p>
+
+<h3 id="sec-3-1">3.1 LangGraph（库/SDK 层代表）：图执行 + 持久化 checkpoint</h3>
+
+<h4>① 状态：✅ 有，checkpoint 是 LangGraph 第一卖点</h4>
+<p><b>判断：完整实现。</b>双持久化抽象：Checkpointer 管 thread 内图状态快照，Store 管跨 thread 应用数据（见②）；断点恢复、回放、分叉都基于 checkpoint。</p>
+<ul>
+<li><b>存储可插拔</b>：<code>BaseCheckpointSaver</code> 定义统一契约，参考实现从 InMemory 到 Sqlite/Postgres，另有 conformance 一致性测试套件——官方有意把存储做成生态</li>
+<li><b>设计边界：恢复执行 ≠ 回滚副作用</b>——checkpoint（含 time-travel 分叉与 interrupt 重放）保证的是<b>工作流状态</b>的持久化与恢复，不提供外部副作用的事务性回滚：节点若已写数据库、发过邮件、调过外部接口，恢复到更早 checkpoint 并不撤销这些操作，涉及外部写仍需幂等键、操作日志、补偿事务等工程机制。横向看，Codex 的 rollout 不可变 + revert、OpenClaw 的会话恢复同样只回滚<b>对话与任务状态</b>；七者中仅 Hermes 另提供文件级 <code>/checkpoints + /rollback</code>（shadow git 快照，opt-in），但也只覆盖本地文件，不触及外部系统</li>
+</ul>
+
+<h4>② 记忆：✅ 有（短期 + 长期两套）；语义检索需自备 embedding</h4>
+<p><b>机制</b>　短期记忆 = 图状态 channel（<code>Annotated[X, reducer]</code> 使多节点并发写同一字段按规则合并而非互相覆盖）；长期记忆 = 独立 BaseStore 数据库，按命名空间 + 键组织，<code>search()</code> 支持前缀过滤、结构化 filter 与自然语言 query。<b>证据</b>　<code>graph/state.py</code>、<code>langgraph/store/base</code>。<b>判断</b>　两套接口边界清晰；语义检索不是内建的——库给 <code>Embeddings</code> 接口（Postgres 版建 pgvector + HNSW 索引）、embedding 自备。</p>
+
+<h4>③ 工具调用：✅ 有，但校验发生在 langchain-core 层</h4>
+<p><b>机制</b>　LangGraph 消费 <code>BaseTool/ToolCall/BaseMessage</code>，pydantic 校验由 langchain-core 层完成；<code>ToolNode</code> 逐 tool_call 执行，工具可返回 <code>Command</code> 改状态/跳转；结构化输出双策略（模型原生 / 工具模拟）。<b>证据</b>　<code>tool_node.py</code> 的 <code>_filter_validation_errors</code>——LLM 可控参数错误回喂模型自纠、系统注入参数（InjectedState 等）剔除。<b>判断</b>　校验与自纠闭环完整但不在本库；⚠ <code>langchain-mcp-adapters</code> 已停维护、MCP 支持并入主包 <code>langchain[mcp]</code>，选型勿引旧包。</p>
+
+<h4>④ 扩展机制：⚠ 只有积木，没有编排器</h4>
+<p><b>机制</b>　编排原语齐备：subgraph（图本身是 Runnable，子图 checkpoint 与父图共用同一 thread 存储）、<code>Send</code> 动态并行（map-reduce）、<code>Command</code> 跳转。<b>证据</b>　<code>types.py</code>；supervisor/swarm 编排器在 monorepo 内<b>未实现</b>（仅测试 fixture 命中）。<b>判断</b>　只有积木、没有编排器——官方路径是独立仓 <code>langgraph-supervisor-py</code> / <code>langgraph-swarm-py</code> + 本库原语；<code>create_react_agent</code> 已标 deprecated，能力上移至 langchain 仓的 <code>create_agent</code>。</p>
+
+<h4>⑤ HITL：✅ 有，且与崩溃恢复共用一套持久化机制</h4>
+<p><b>机制</b>　<code>interrupt(value)</code>（<a href="https://github.com/langchain-ai/langgraph/blob/3c916d750575b22c464790e9774494d810ccd322/libs/langgraph/langgraph/types.py#L903"><code>types.py</code></a>）抛出中断，被 runner 的 <code>commit()</code> 捕获，把中断点当作未完成写入存进状态——"等待人工"与"进程崩溃"在存储层是同一种东西；<code>Command(resume=...)</code> 时节点从头重放，已答过的审批不重复问；另支持 <code>response_schema</code> 类型化审批表单。<b>证据</b>　<code>types.py</code>、<code>pregel/_runner.py</code>（permalink 见上）。<b>判断</b>　恢复语义统一；坑写进文档——节点重跑意味着 interrupt 前代码会再执行（副作用须幂等），不可用 try/except 包 interrupt。</p>
+
+<h4>⑥ 可观测性：❌ 原生 OTel 未实现，走 callback 体系自建</h4>
+<p><b>机制</b>　观测走 langchain-core callback 体系接自建后端（Langfuse 等有现成集成）；评测集成不内置。<b>证据</b>　OSS 层无原生 OTel exporter——全仓 grep 仅测试文件命中；主包 deps 不含 LangSmith。<b>判断</b>　原生 OTel <b>未实现</b>、如实报告；LangSmith 完全可选，不配置即无外发。</p>
+
+<h4>⑦ 部署与许可证：✅ 引擎全 MIT，可完全自托管</h4>
+<p><b>机制</b>　七包全 MIT（逐一核对 pyproject）；生产最小组合 = <code>langgraph + langgraph-checkpoint-postgres</code> + 自写 ASGI 入口；沙箱不内置（库层不直接执行环境操作）。<b>证据</b>　API server 本体在独立包 <code>langgraph-api</code>（<code>langgraph-cli</code> 的 <code>up</code> import 之）。<b>判断</b>　自托管完整；供应链注记——langchain-community 包正在停维护收缩（sunset），依赖只走主线包。</p>
+
+<h3 id="sec-3-2">3.2 Codex CLI（Runtime/Harness 层代表）：内核级沙箱 + 企业治理面</h3>
+
+<h4>① 状态：✅ 有（rollout 不可变会话 + resume），但无快照式 checkpoint</h4>
+<p><b>机制</b>　会话落盘为 append-only JSONL（真相源）+ SQLite 索引层，fork/回退新开文件、thread_id 稳定；<code>codex resume / fork / queue</code> 入口齐全，非交互 <code>codex exec resume</code> 保留原 transcript、plan history 与 approvals。<b>证据</b>　<code>rollout/src/lib.rs</code>；用户可感知的"回退"是 Esc-Esc backtrack，非 checkpoint 回放。<b>判断</b>　有恢复、无快照——代码里的 "checkpoint" 是压缩检查点而非产品级快照，没有 LangGraph 式 time-travel。</p>
+
+<h4>② 记忆：✅ 有（AGENTS.md 双层 + memories 两阶段长期管线）</h4>
+<p><b>机制</b>　项目记忆（AGENTS.md 沿项目根向上收集拼接）与全局记忆（<code>~/.codex/AGENTS.md</code>）双层；长期记忆两阶段管线——后台从闲置 rollout 抽取结构化记忆 → consolidation 合并整编；会话内压缩三路（本地摘要 / 服务端压缩 / token 预算式开新窗）。<b>证据</b>　<code>core/src/agents_md.rs</code>、<code>core/src/memories/</code>（工件存 <code>$CODEX_HOME/memories/</code>）。<b>判断</b>　体系完整，但长期记忆<b>已实现、默认关闭</b>（<code>features.memories</code> 默认 off，需显式开启）。</p>
+
+<h4>③ 工具调用：✅ 有（统一 ToolSpec + 两级结构化输出 + MCP 双向）</h4>
+<p><b>机制</b>　统一类型 ToolSpec 四型：Function / Namespace（打包省 token）/ ToolSearch（按需加载）/ Freeform——apply_patch 用约束文法让模型直出补丁文本而非 JSON；结构化输出两级（工具结果 output_schema + 回合最终 json_schema(strict)）；MCP 走 stdio + streamable-HTTP 双 transport、白黑名单、per-server 审批。<b>证据</b>　<code>tools/src/tool_spec.rs</code>；校验失败不打断回合——错误分可自纠（回喂重试）与致命（终止）两类。<b>判断</b>　MCP 为纯 Client 侧接入——曾提供的 MCP Server 模式已于 2026-09 由官方文档确认移除；内置 shell 为可续写伪终端，输出含退出码与耗时。</p>
+
+<h4>④ 扩展机制：✅ 有（Skills/Plugins/Hooks/MCP 四通道 + 原生多 agent）</h4>
+<p><b>机制</b>　四通道：Skills（<code>$CODEX_HOME/skills/</code>，显式 mention 与隐式识别）、Plugins（marketplace：npm 源 / bundle / 远程目录）、Hooks（14 个生命周期事件，可改写命令）、MCP；多 agent 工具组原生（spawn/manage 子代理 + message-board，深度硬上限）。<b>证据</b>　<code>hooks/src/lib.rs</code>；旧 <code>~/.codex/prompts</code> 自定义斜杠命令已被 skills 取代。<b>判断</b>　扩展面收敛清晰、受控——官方明示子代理"只在显式要求时才 spawn，token 消耗高于单代理"；<code>codex exec --json</code> 每行一事件的 stdout 契约使其可作 CI/管道编排单元。</p>
+
+<h4>⑤ HITL：✅ 有（sandbox × approval 两轴正交）</h4>
+<p><b>机制</b>　sandbox 决定"命令能干什么"，approval 决定"越界时问不问"——两轴正交；审批档 UnlessTrusted / OnRequest（默认）/ Granular（实验，五开关逐类）/ Never。<b>证据</b>　<code>protocol/src/protocol.rs</code>；沙箱内被拒后可询问"脱沙箱重试"，但 Never / OnRequest 档下不重试，且策略禁止读的文件同样禁止脱沙箱重试——否则等于悄悄放行。 <b>判断</b>　设计正交、逃逸口管理严谨；exec 无界面模式默认 never，<code>--dangerously-bypass-approvals-and-sandbox</code> 与显式审批参数冲突会报错。</p>
+
+<h4>⑥ 可观测性：✅ 有（OTel 三信号，隐私默认关）</h4>
+<p><b>机制</b>　OTel 三信号可导出（None / Statsig / OtlpGrpc / OtlpHttp）；会话日志三层（rollout JSONL + 文件日志 + SQLite logs 库）；analytics 独立通道默认 POST 到 ChatGPT 后端、<code>[analytics] enabled=false</code> 一键关。 <b>证据</b>　<code>otel/src/config.rs</code>；指标含 <code>codex.turn_ttft</code> / <code>codex.turn_cost_microusd</code> 等。<b>判断</b>　隐私姿态保守——<code>log_user_prompt</code> / <code>log_agent_responses</code> 默认 false；rollout-trace 为本地调试 bundle，官方明示 "not telemetry… does not upload"。</p>
+
+<h4>⑦ 部署与许可证：✅ 有（三平台内核级沙箱 + requirements.toml 企业治理，同类独有）</h4>
+<p><b>判断：有。</b>macOS Seatbelt / Linux bubblewrap+seccomp / Windows 三后端；Windows 默认 Disabled 时 workspace-write 自动降级 read-only——宁可降级不裸奔；<code>requirements.toml</code> 管理员强制、用户不可削弱。</p>
+<ul>
+<li><b>沙箱细节</b>（<code>sandboxing/src/manager.rs</code>）：macOS 网络默认全禁（fail-closed）；Linux 封 io_uring 与 AF_VSOCK 防 WSL2 逃逸；Windows 降级有代码与测试（<a href="https://github.com/openai/codex/blob/bfdbf01/codex-rs/config/src/config_toml.rs#L834-L852"><code>config/src/config_toml.rs</code></a>）</li>
+<li><b>模型接入与治理面</b>：自定义 provider <code>[model_providers.&lt;id&gt;]</code>；⚠ wire_api 只剩 responses（"chat" 已删除并返回迁移报错，<a href="https://github.com/openai/codex/blob/bfdbf01/codex-rs/model-provider-info/src/lib.rs#L109-L143"><code>model-provider-info/src/lib.rs</code></a>）——第三方网关必须实现 Responses 兼容端点；requirements.toml 白名单（allowed_sandbox_modes / allowed_approval_policies / permission profile 未来新增档默认拒绝 / MCP 身份 allowlist / enforce_residency 驻留锁定）；本地推理走 Ollama / LM Studio</li>
+<li><b>认证与密钥</b>：ChatGPT OAuth（PKCE）或 API key，企业路 Bedrock SigV4 / GCP；auth.json 可迁 OS keyring；provider key 推荐 env_key 或命令式 auth（短时 token）</li>
+</ul>
+
+<h3 id="sec-3-3">3.3 OpenClaw（成品/产品层代表）：Gateway 控制平面 + 全插件化 + 供应链防御标杆</h3>
+
+<h4>① 状态：✅ 有（每 agent 一个 SQLite + 重启恢复三套检测）；time-travel 未实现</h4>
+<p><b>机制</b>　每 agent 一个独立 SQLite 库（可换 Postgres），会话记录表只追加 + 序号、配全文检索与向量列；重启恢复三套检测（每轮调模型前先落盘、关机留标记、启动扫孤儿会话）、每会话 3 次恢复预算、crash-loop 熔断。<b>证据</b>　<code>openclaw-agent-storage-schema.ts</code>；明文准则"重启后不重问已批过的授权"。<b>判断</b>　工程化扎实；checkpoint / time-travel <b>未实现</b>——最接近的是保留全部会话记录 + 上下文压缩 + 子代理分叉。</p>
+
+<h4>② 记忆：✅ 有（五层体系 + 溯源防投毒 + 混合检索）</h4>
+<p><b>机制</b>　五层体系：Instructions（AGENTS.md）→ Curated core（MEMORY.md/USER.md，"做梦"巩固）→ Episodic（日记，只按需召回、永不自动进入对话）→ Prospective（长期意图，时间型编译成 cron）→ Review（DREAMS.md 永不进入对话）；每条记忆带来源标记（本人/agent/不可信/系统，默认按不可信处理），定时任务与子代理产物不能晋升为长期记忆；BM25 + 向量混合检索（中文 CJK 三元组分词），召回双通道（开机按重要性×时间衰减注入 + Active Memory 子代理翻记忆）。<b>证据</b>　<code>memory_index_chunks + memory_embedding_cache</code> 双表；对照 OWASP ASI06 与 MINJA 建模。<b>判断</b>　写路径即安全边界——网络内容标不可信，防投毒是设计目标而非附注。</p>
+
+<h4>③ 工具调用：✅ 有（五档 exec 策略 + 多层准入 + MCP 双向）</h4>
+<p><b>机制</b>　shell 执行独立五档策略（deny / allowlist / ask / auto / full，auto = 模型预审→人工兜底，策略钩子 fail-closed、15s 超时变拒绝）；工具准入多层叠加——agent / global / default 三源合并（deny wins）+ 按 provider、按发送者 + 部署方具名 allowlist，MCP 工具再过 sandbox.tools 一道门；MCP 双向（客户端 + 自身暴露成 server + relay 反向中继）。<b>证据</b>　<code>zod-schema.agent-runtime.ts</code>；子代理硬禁名单（<code>agent-tools.policy.ts</code>：叶子子代理禁 sessions_spawn / gateway 级工具、禁直接对用户发消息）；<code>api.registerTool</code> TypeBox 运行时校验 + 模型坏输出修复层。<b>判断</b>　防线多层，且子代理权限收敛比主 agent 更严。</p>
+
+<h4>④ 扩展机制：✅ 有（harness 是一级插件契约，产品层可整层复用 harness 层）</h4>
+<p><b>机制</b>　180+ 个插件 + 约 50 个注册面（manifest 惰性激活 + contracts.tools 契约）；40+ 事件钩子的注入风险 / 超时行为 / 出错放行还是拒绝写进 <code>PLUGIN_HOOK_METADATA</code>；harness 是一级插件契约——外部引擎接入需实现四个接口（跑一轮 / 压缩 / 分叉会话 / 认证指纹）。<b>证据</b>　<a href="https://github.com/openclaw/openclaw/blob/4285c6ce/src/agents/harness/types.ts#L620-L770"><code>src/agents/harness/types.ts</code></a>；注册表硬规则：id "openclaw" 保留给内置运行时。<b>判断</b>　产品层可整层复用 harness 层：现有 harness 按集成方式分两类——原生插件（内置 openclaw[旧名 pi，与 Pi 项目无涉] + <b>codex app-server（精确 pin <code>@openai/codex: 0.164.0</code>，nativeCompaction 独占）</b> + copilot 等）、外部 ACP 接入（acpx 启动 Claude Code / Gemini CLI 等，Pi 亦经此路径）；子代理 sessions_spawn 隔离分叉，嵌套深度上限 1-5、越深可用工具越少。</p>
+
+<h4>⑤ HITL：✅ 有（审批在聊天渠道内以按钮卡呈现，等待期计时暂停）</h4>
+<p><b>机制</b>　两阶段审批（<code>before_tool_call</code> 返回 requireApproval → 网关注册并等待）；审批交互发生在用户所在聊天渠道内的按钮卡上，无按钮渠道回退 <code>/approve</code> 命令（非授权 sender 拒绝）；等待审批期间 run 计时暂停。<b>证据</b>　拒绝的终局语义直接写给模型——"This denial is final… Do not run the tool call again"（<code>agent-tools.before-tool-call.approval.ts</code>）。<b>判断</b>　渠道内审批体验完整；运行中可直接塞入新指令（steering），提权 exec 是全局明示的逃逸口（tools.elevated 双门）。</p>
+
+<h4>⑥ 可观测性：✅ 有（单一诊断漏斗双导出器，隐私默认收敛）</h4>
+<p><b>机制</b>　单一诊断事件漏斗接两个导出器（OTel 三信号 + Prometheus 30+ <code>openclaw_*</code> 指标，必须走 Gateway 认证）；Gateway 同端口 Dashboard（审批卡 / 日志 / 会话）。<b>证据</b>　diagnostics-otel 对 provider 调用打 W3C traceparent 标记防伪造调用链。<b>判断</b>　隐私默认收敛——原始 prompt / 回复 / 工具 IO 一律不导出（要导出须逐项显式开且导出前仍脱敏），日志脱敏恒开、不可配置关闭。</p>
+
+<h4>⑦ 部署与许可证：✅ 有（完全自托管）；⚠ 沙箱默认关闭</h4>
+<p><b>判断：有，但沙箱要显式开。</b>无付费层 / 无托管服务 / 无 token；容器沙箱体系完整但<b>默认关闭</b>（"Tools run on the host unless you configure sandboxing"）——个人助理默认姿态，企业须显式加固；一个 Gateway = 一个信任域（SECURITY.md）。</p>
+<ul>
+<li><b>部署形态</b>：Docker（digest 钉住 / 非 root / cap_drop / no-new-privileges）+ 无公网 ingress 加固模板</li>
+<li><b>沙箱与密钥</b>：Docker 后端 8 项必填、默认镜像无网络、危险目录挂载默认拒绝；SecretRef 三源（env / file / exec——官方示例 1Password op / Vault / SOPS）+ 明文凭据审计扫描</li>
+<li><b>数据本地性</b>：默认全本地，唯一默认外联是每日版本检查（可关）；模型/渠道流量直连服务商、无中继云</li>
+</ul>
+<h4>供应链防御专题：把"信任"做成版本库里的台账</h4>
+<ul>
+<li><b>默认冷却</b>：<a href="https://github.com/openclaw/openclaw/blob/4285c6ce/pnpm-workspace.yaml#L9-L10"><code>pnpm-workspace.yaml</code></a> <code>minimumReleaseAge: 10080</code>（7 天）+ strict——任何依赖新版本必须"冷"满 7 天才进安装图，直接挡掉"即发即投毒"窗口</li>
+<li><b>豁免即台账</b>：每条豁免带评审依据（PR 号/事件）+ 责任人 + remove-after 期限——<code>@lancedb/lancedb@0.41.0</code> 标注 "Approved LanceDB compromised-CA remediation"（上游 CA 受陷修复版即时放行）；<code>@openai/codex</code> 因信任分级整体豁免——OpenAI 发布链被显式信任到可豁免冷却，其余 npm 生态不可</li>
+<li><b>反面记录</b>：2026 年初爆发期安全事件密集——CCB Belgium 公告 1-click RCE（CVSS 8.8，影响 &lt;2026.1.29）；ClawHub 出现大规模恶意 Skills 供应链事件，<b>不同研究机构在不同时间窗口识别到数百个恶意 Skills</b>（如 IMDA 报告引 Koi Security：2026-02-01 发现 341 个、02-16 报告 824 个；Unit 42 对 02—05 月的后续分析仍发现 5 个绕过初期治理的样本——检测命中、确认恶意、已下架、仍可下载是不同口径，不混用单一数字）；多所机构发布停用通告。企业落地必须走 hardened baseline（sandbox all + 权限档 + 审批默认开），并对 Skills 安装实施来源准入、静态扫描、版本锁定与人工审查</li>
+</ul>
+
+<h3 id="sec-3-4">3.4 其余五工具简述（相对同层深读代表的关键差异）</h3>
+
+<p>七维度全量概览见 <a href="#sec-0">§0</a> 总览矩阵；安全、合规、国内可用性等企业维度见 <a href="#sec-4">§4</a> 各表。本节只写各工具与同层深读代表（LangGraph / Codex / OpenClaw）的关键差异：</p>
+
+<table>
+<thead><tr><th style="width:11%">工具</th><th style="width:51%">相对同层代表的关键差异</th><th style="width:38%">企业/国内结论（详见 §4）</th></tr></thead>
+<tr><td><b>LangChain</b><br><span class="small">vs LangGraph</span></td>
+<td>同仓不同位：LangChain 是较高层框架（<code>create_agent</code> 标准 Agent Loop + Middleware，基于 LangGraph Runtime）；LangGraph 提供底层图编排与持久化。supervisor/swarm 编排器在 LangChain 侧现成（多 agent 五模式）；结构化输出双策略（模型原生 / 工具模拟）。</td>
+<td>中文资料 7 者最厚；DeepSeek / Ollama 官方合作包；Qwen 走第三方包、community 停维护应避开（<a href="#sec-4-5">§4.5</a>）。</td></tr>
+<tr><td><b>Pydantic-AI</b><br><span class="small">vs LangGraph</span></td>
+<td>类型优先而非图优先：Agent 无状态，跨 run 状态由 Conversation 显式携带（LangGraph 是 thread 内图状态 + checkpoint）；记忆即消息历史 + BM25 检索，无独立记忆系统；Deferred Tools 把 HITL 做成一等公民、挂起状态随会话持久化；有意不做插件系统，靠 capability 组合扩展。配套包 pydantic-ai-harness 非本题对象。</td>
+<td>依赖面 7 者最小；官方明示"审批不是授权边界"、执行隔离自理（<a href="#sec-4-1">§4.1</a>）；v1→v2 API 更名，注意旧教程（<a href="#sec-4-4">§4.4</a>）。</td></tr>
+<tr><td><b>dsh</b><br><span class="small">vs Codex</span></td>
+<td>同为日志派会话但强调事件溯源：只追加事件日志 + 格式版本迁移链，状态由重放重建；插件三形态（npm / 配置组合 / 动态插件=agent 自写、带审批门），子代理可纳 Codex 为执行后端；沙箱同为三平台，但 Windows 隔离不完整（Codex Windows 为内核级）；每工具强制结构化输出定义；长期记忆无内置。</td>
+<td>治理三缺口（默认日志上传、preview 无审计、无 SSO/RBAC）是金融落地主要障碍（<a href="#sec-4-1">§4.1–4.2</a>）；全量双语文档、可全境内运行；全 prerelease 须锁版本（<a href="#sec-4-4">§4.4</a>）。</td></tr>
+<tr><td><b>Pi</b><br><span class="small">vs Codex</span></td>
+<td>极简哲学是 Codex 大而全体系的反面：仅 8 个内置工具（默认开 4 个）；ExtensionAPI 可同名覆盖全部内置工具、接管压缩与信任决策——扩展是灵魂而非附加通道；pi-durable 提供检查点式持久执行（<b>实验性·可选</b>）；codemode 在 QuickJS 沙箱跑脚本编排批量工具调用（token 经济性设计）；无内置权限系统，靠扩展实现审批。</td>
+<td>国产模型原生内置 6 家（<a href="#sec-4-5">§4.5</a>）；供应链自律最强之一；无沙箱、无权限系统，企业必备件全自建（<a href="#sec-4-1">§4.1</a>）。</td></tr>
+<tr><td><b>Hermes-Agent</b><br><span class="small">vs OpenClaw</span></td>
+<td>同为产品层但工程重心不同：OpenClaw 以 Gateway 控制平面 + 双插件化为中心，Hermes 以状态工程化见长（SQLite+WAL 多进程仲裁、受监督守护进程、退役日志取证）+ 国内消息平台适配最深（微信/企微/钉钉/飞书/QQ 官方 API 直连）；记忆为文件式冻结快照 + FTS5 全文检索（OpenClaw 为五层 + 向量混合）；审批三档 + 无人值守默认拒绝 + 硬底线黑名单。</td>
+<td>红旗：hooks 目录放入即加载无确认门、单用户非多租户（<a href="#sec-4-1">§4.1</a>）；国内整链路最短路径之一（<a href="#sec-4-5">§4.5</a>）。</td></tr>
+</table>
+
+<h2 class="pagebreak" id="sec-4">4 企业落地考量（中国境内金融/大型企业视角）</h2>
+
+<h3 id="sec-4-1">4.1 安全：沙箱、权限模型、密钥管理、供应链</h3>
+
+<p><b>安全评价六问</b>：安全能力／默认姿态／强制性／隔离边界／治理能力／可审计性——下表三列近似承载前三问，治理与审计增量结论见表后。</p>
+
+<p><b>执行隔离与审批</b>：</p>
+<table>
+<thead><tr><th style="width:15%">工具</th><th style="width:44%">执行隔离（沙箱）</th><th style="width:41%">权限 / 审批模型</th></tr></thead>
+<tr><td><b>LangChain/LangGraph</b></td><td>无（库层不管；LangSmith Sandboxes 为境外 SaaS）</td><td>无内置，代码级自建</td></tr>
+<tr><td><b>Pydantic-AI</b></td><td>无（核心库不管执行隔离）</td><td>Deferred Tools 审批（<b>官方明示"非授权边界"</b>，端点鉴权自理）</td></tr>
+<tr><td><b>dsh</b></td><td>Linux bwrap / Landlock、macOS Seatbelt、<b>Windows 隔离不完整</b>（自报告）；无后端即拒（fail-closed）</td><td>沙箱三模式 × 审批两旋钮 + 预设组合；审批默认拒绝（fail-closed）</td></tr>
+<tr><td><b>Codex CLI</b></td><td><b>7 者最强</b>：三平台内核级强制（Windows 默认 Disabled 自动降级 read-only）</td><td>两轴正交 + granular 五开关；<b>requirements.toml 管理员强制为同类独有</b>——但审批档位<b>不等同企业 RBAC</b></td></tr>
+<tr><td><b>Pi</b></td><td><b>无内置</b>，官方文档化容器化三模式</td><td>无内置权限系统；扩展钩子可拦截 + 界面确认；项目信任只管加载不管工具</td></tr>
+<tr><td><b>OpenClaw</b></td><td><span class="neg"><b>⚠ 单一信任域：一个 Gateway = 一个受信任操作员边界（官方明示），工具审批不是多租户授权边界</b></span>——企业安全评价的第一前提；容器沙箱体系完整但<b>默认关闭</b></td><td>五档 exec 策略 + 多层工具准入 + 渠道配对身份门 + elevated 提权双门</td></tr>
+<tr><td><b>Hermes-Agent</b></td><td>靠终端后端：local 无隔离（靠审批层）+ Docker 硬化容器 + SSH / 云沙箱</td><td><b>审批分层最细</b>：三档 + 无人值守默认拒绝 + 硬底线黑名单（全放行也越不过）</td></tr>
+</table>
+
+<p><b>密钥管理与供应链</b>：</p>
+<table>
+<thead><tr><th style="width:15%">工具</th><th style="width:38%">密钥管理</th><th style="width:47%">供应链风险</th></tr></thead>
+<tr><td><b>LangChain/LangGraph</b></td><td>走 env 约定，应接 KMS / Vault；<b>checkpoint 静态加密是一等能力</b>（AES）</td><td>依赖面小但包布局变化快（community 收缩 / mcp 并包），须锁版本 + 私有镜像</td></tr>
+<tr><td><b>Pydantic-AI</b></td><td>密钥全 env；MCP 配置 <code>${VAR}</code> 展开不入盘</td><td><b>依赖面 7 者最小</b>（slim extras 全可选），可控性最佳</td></tr>
+<tr><td><b>dsh</b></td><td>凭据存 <code>$DSH_HOME/.credentials.yaml</code>（界面回显脱敏）</td><td>SAFETY.md 自认<b>未做安全审计</b>；<b>动态插件是独有攻击面</b>（agent 自写、有审批门）；注册表冒名包实锤</td></tr>
+<tr><td><b>Codex CLI</b></td><td>file / keyring / auto 三选 + 命令式 auth 短时 token；子进程环境默认滤 KEY/SECRET/TOKEN</td><td>cargo-deny 依赖审计；风险 = 周级发版节奏、无插件签名机制</td></tr>
+<tr><td><b>Pi</b></td><td>models.json 支持 <code>$ENV</code> 插值与 <code>!command</code>（可接外部密钥管理器）</td><td><b>自律最完整之一</b>（锁版本 + 冷却期 + OIDC 签名 + SHA256SUMS）；但扩展进程内全权限执行，装前人工审代码是唯一防线</td></tr>
+<tr><td><b>OpenClaw</b></td><td>SecretRef 三源（env / file / exec：1Password / Vault / SOPS）+ 明文凭据审计扫描</td><td><b>防御体系 7 者最完整</b>（7 天冷却 + 台账 + GHSA 规则化）；<span class="neg">但有真实事件史：CCB RCE + ClawHub 恶意 Skills 供应链事件（见 §3.3 口径注记）</span></td></tr>
+<tr><td><b>Hermes-Agent</b></td><td>凭据保险库（Bitwarden / 1Password）；MCP 子进程 env 白名单</td><td><span class="neg">hooks 目录"放入即加载"无确认门（文档自认）</span>，须纳入基线审计</td></tr>
+</table>
+
+<p><b>安全面的三个跨层结论</b>：沙箱强度（同层比较）Codex（内核级、三平台、默认降级保护）＞ dsh（三平台但 Windows 隔离不完整且无审计）＞ Pi（无，靠外置容器）——库层与产品层不参与此排序（前者不执行、后者的威胁模型在网关与渠道侧）；产品层的核心安全命题不是沙箱而是<b>渠道攻击面</b>——OpenClaw 事件史（<a href="#sec-3-3">§3.3</a>）证明"常驻网关+聊天机器人"的暴露面与传统 Web 服务同构，须按互联网服务标准加固与披露跟踪；供应链正成为分层新维度——OpenClaw（冷却+台账）与 Pi（pin+release-age）把依赖治理做进工程默认，dsh/Hermes 的插件/技能市场面需企业自有准入控制兜底。</p>
+
+<h3 id="sec-4-2">4.2 合规：私有化、数据不出境、审计留痕、许可证</h3>
+
+<table>
+<thead><tr><th style="width:13%">工具</th><th style="width:20%">私有化部署</th><th style="width:34%">数据不出境能力（关键差异）</th><th style="width:33%">审计留痕</th></tr></thead>
+<tr><td><b>LangChain/LangGraph</b></td><td>纯库内嵌或 Agent Server 自托管 docker</td><td>✅ 核心链路零境外依赖（LangSmith 可选不装即无外发）；checkpoint 默认<b>明文存全量对话</b>，须强制 AES+库权限+保留策略</td><td>callback 体系接自建后端；无原生 OTel exporter</td></tr>
+<tr><td><b>Pydantic-AI</b></td><td>纯库自托管，无云依赖</td><td>✅ 最干净：模型端点全自定（内网 vLLM）+ Logfire 不装即零外发（装了可 <code>include_content=False</code> 或改发自建 OTLP）</td><td>原生 OTel 三信号，接国产 OTLP 后端</td></tr>
+<tr><td><b>dsh</b></td><td>dsh web 默认只监听本机</td><td>⚠️ <b>重大红线：默认启用 <a href="https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/session/session-log-deepseek">dsh-session-log-deepseek</a>——用官方 API 时每请求附带最高 8 MiB 增量会话日志上传 DeepSeek</b>（境内方向但金融必须显式关闭）；遥测可彻底关闭</td><td>审批记录落持久日志；但<b>无集中审计管道、无 SSO/RBAC</b></td></tr>
+<tr><td><b>Codex CLI</b></td><td>本地运行无强制云组件</td><td>⚠️ 默认模式模型流量+OTel 指标出境至 OpenAI；API-key+境内端点模式日常流量不经 OpenAI；<code>enforce_residency</code> 仅锁 us</td><td>rollout JSONL 会话真相源 + SQLite logs + OTel 可指自建端点（支持 mTLS）</td></tr>
+<tr><td><b>Pi</b></td><td>纯本地（模型目录缓存离线可用）</td><td>✅ 运行时唯一外联=模型端点（可全国内/本地）；/share 与 /bug 上传需禁用</td><td>无内建 OTel 导出；<code>tool_execution_end</code> 扩展钩子是自建审计日志的正确挂点</td></tr>
+<tr><td><b>OpenClaw</b></td><td>完全自托管；docker 多形态，含无公网 ingress 加固模板</td><td>✅ 数据默认全本地（~/.openclaw），对基金会唯一默认外联=每日版本检查（可关）；模型/渠道流量直连服务商无中继云</td><td>OTel/Prometheus 双导出 + 日志 redaction 恒开；无 SIEM 级集中审计产品模块</td></tr>
+<tr><td><b>Hermes-Agent</b></td><td>自托管完整（含 Docker 沙箱镜像）；<span class="neg">Hermes Cloud 在境外云，境内只走自托管</span></td><td>✅ 所有状态本地 ~/.hermes；<b>消息网关直连平台官方 API、不经 Nous 服务器</b>；OTLP 无内容导出</td><td>会话全量落 SQLite+FTS5 可检索；OTLP 可接自建 Collector；无 RBAC 产品模块</td></tr>
+</table>
+
+<p><b>许可证横向</b>：7 者全部 MIT 或 Apache-2.0（Codex），商用无限制。合规分水岭不在许可证而在<b>数据流向的默认值</b>——默认零外发：Pydantic-AI / Pi / LangGraph；数据本地、渠道与 provider 流量直连境外服务商（可配国产端点）：OpenClaw / Hermes；默认出境（可改）：Codex；有一个必须显式关闭的默认上传项：dsh——本次调研对金融场景最重要的单点发现之一。</p>
+
+<h3 id="sec-4-3">4.3 成本：token 开销放大因素与运维成本</h3>
+
+<p><b>token 放大的主要机制与对策</b>（跨工具通用，按可控性排序）：</p>
+<ul>
+<li><b>多 agent 扩散与上下文压缩</b>：Codex 官方明示子代理"token 消耗高于单代理"且默认只在显式要求时 spawn；压缩策略各家齐备——Codex 三路（本地摘要/服务端/预算式开新窗）、Hermes 有损摘要、Pi 结构化摘要 + <b>codemode</b>（模型写脚本编排批量工具调用，只有脚本输出回模型）、dsh 工具定义白名单投影</li>
+<li><b>记忆与状态注入</b>：Hermes 记忆冻结快照、OpenClaw 只注入 curated 层（日记层永不自动注入）——省 token 与安全兼顾；LangGraph 落盘档位影响的是数据库写放大而非 token；SQLite 会话库需保留策略（OpenClaw 默认 30 天自动清理）</li>
+<li><b>Prompt Cache 命中率（隐性放大器）</b>：系统提示词、工具 Schema、Skills 与长期记忆注入都进入输入前缀——<b>前缀稳定才能命中缓存，命中与未命中价差可达数倍</b>，动态注入会破坏前缀导致全价重算。佐证：Hermes 冻结快照专为保前缀、Pi models.json 声明 promptCache、Pydantic-AI 遥测内置 hit_ratio 告警——评估成本时应把缓存命中率与上下文压缩同列为首要观测项</li>
+</ul>
+
+<p><b>运维成本按层分三档</b>：库层无额外守护进程，但需自建服务架构、状态存储与模型网关等基础设施——主要成本是<b>工程建设与平台运维</b>；Harness 层是"每开发者一份"的终端工具，无服务端运维（dsh web 模式例外）；产品层运维常驻守护进程（进程监督 / SQLite 维护 / 渠道凭据轮换 / 版本更新列车）。<b>版本跟进成本是隐藏大头</b>：Codex 周级、Hermes 日更量级、dsh 全 prerelease 且明示破坏性变更、Pi 小版本也可能破坏兼容——企业全部需要"锁版本 + 升级窗口管理"，dsh 是 7 者中版本风险最高者。</p>
+
+<h3 id="sec-4-4">4.4 维护成熟度</h3>
+
+<table>
+<thead><tr><th style="width:13%">工具</th><th style="width:15%">项目年龄</th><th style="width:26%">治理与核心维护者</th><th style="width:23%">活跃度</th><th style="width:23%">成熟度判断</th></tr></thead>
+<tr><td><b>LangChain/LangGraph</b></td><td>2022 年初（最老）</td><td>LangChain Inc. 商业公司，生态最成熟</td><td>14.9 万/4.4 万★，当日 push</td><td><b>生产级</b>；大版本重构期已过（v1.0），文档质量高</td></tr>
+<tr><td><b>Pydantic-AI</b></td><td>2024 末</td><td>Pydantic 团队（类型生态口碑背书）</td><td>2.1 万★，当日 push</td><td><b>生产级</b>；Harness 包 0.x 另计</td></tr>
+<tr><td><b>dsh</b></td><td>2026-08（3 个月）</td><td>DeepSeek 官方 org</td><td>27.1 万★（3 个月现象级），当日 push，全系列 prerelease</td><td><b>developer preview</b>：架构成熟度极高（事件溯源+格式版本化纪律）但产品/企业就绪度低（无审计、无 SSO）</td></tr>
+<tr><td><b>Codex CLI</b></td><td>2025-04 开源</td><td>OpenAI 官方，专职团队</td><td>13.3 万★，当日 push，周级发版</td><td><b>生产级</b>（但迭代过快，企业须锁版本）</td></tr>
+<tr><td><b>Pi</b></td><td>2025-08</td><td>Mario Zechner 主导 + mitsuhiko（Armin Ronacher）；Earendil Works PBC</td><td>12.0 万★，当日 push，npm 周下载百万级</td><td><b>1.0 已过</b>（v1.5）；社区维护、issue 门槛模式对紧急求助不友好</td></tr>
+<tr><td><b>OpenClaw</b></td><td>2025-11（Clawdbot）</td><td><b>独立基金会 501(c)(3) 非营利</b>：多家机构捐赠、与 30 余家组织合作</td><td>39.3 万★，近期常态 push，10 月内连发安全补丁列车</td><td><b>治理成熟 ≠ 产品安全成熟</b>：基金会治理与披露文化成熟（600+ 条公告），但安全事件史说明产品攻击面曾被验证——两项分开评价，生产落地须走加固基线</td></tr>
+<tr><td><b>Hermes-Agent</b></td><td>2025-07</td><td>Nous Research（teknium1 联创主导），数百 contributors</td><td>26.0 万★，当日提交</td><td><b>生产级倾向</b>，但日更量级=回归风险并存</td></tr>
+</table>
+
+<p><b>过程指标之外，成熟度更要看质量指标</b>——stars、commit 与测试数量是活跃度信号，不直接证明生产成熟度：核心维护者集中度（Bus Factor）Hermes 联创主导、Pi 双主力——集中意味着路线连贯但单点风险，dsh 六人千级 commits、OpenClaw 基金会群体相对分散；Issue/PR 响应与发布质量——dsh 不收 GitHub issues、Pi 对新贡献者 issue/PR 默认自动关闭（求助有门槛）、LangGraph 单 release 窗口合并数百 PR，CI 质量 Pi（OIDC+SHA256SUMS）、OpenClaw（provenance 签名+600+ 安全披露）、dsh（per-file 覆盖门+双语文档门禁）、Codex（cargo-deny+Bazel）；Breaking Change 频率见 §4.3。</p>
+
+<h3 id="sec-4-5">4.5 国内可用性：国产模型、断网运行、中文资料</h3>
+
+<table style="table-layout:fixed">
+<thead><tr><th style="width:13%">工具</th><th style="width:32%">国产模型接入</th><th style="width:25%">无境外网络依赖运行</th><th style="width:30%">中文资料</th></tr></thead>
+<tr><td><b>LangChain /<br>LangGraph</b></td><td>DeepSeek/Ollama 官方合作包；Qwen 走第三方、智谱走 community 包</td><td>✅ 核心链路零境外依赖；LangSmith 可选</td><td>★★★★★ 官方生态外中文教程最厚</td></tr>
+<tr><td><b>Pydantic-AI</b></td><td>DeepSeek/通义/月之暗面官方 Provider；智谱走兼容端点</td><td>✅ 零外联（模型端点全自定）</td><td>★★☆ 无官方中文，社区镜像停在 v1 时代</td></tr>
+<tr><td><b>dsh</b></td><td>内置 DeepSeek/GLM/Kimi + 任意兼容端点三协议</td><td>✅ anthropic/openai 可完全不配；遥测可全关</td><td>★★★★★ <b>唯一全量中英双语文档</b>（.zh.md 成对）</td></tr>
+<tr><td><b>Codex CLI</b></td><td><b>DeepSeek 官方一级支持</b>（中文文档+一键脚本+原生 Responses API）</td><td>⚠️ API-key+境内端点可行；安装/OAuth 默认域名需代理</td><td>★★★★ DeepSeek 官方中文文档+知乎/腾讯云多篇</td></tr>
+<tr><td><b>Pi</b></td><td><b>原生内置最全</b>：六家国产厂商带专属 env key（多家含 China 专属端点）</td><td>✅ 运行时唯一外联=模型端点；pi.dev/GitHub/npm 在境外国（镜像解决）</td><td>★★★ 无官方中文；runoob/知乎/B 站已有规模</td></tr>
+<tr><td><b>OpenClaw</b></td><td>内置 provider 覆盖最广：国内主流厂商全家 + Ollama/vLLM/SGLang 本地栈</td><td>✅ 模型+渠道（飞书/QQ/微信）全国产可组合；ClawHub 插件源可强制改用 npm 源规避</td><td>★★★★ <b>官方文档有 zh-CN 版</b>；飞书官方插件</td></tr>
+<tr><td><b>Hermes-Agent</b></td><td>五家原生 provider，多家自动探测大陆/CN 端点</td><td>✅ 模型+消息平台全境内可；安装/更新/Skills Hub 链路依赖境外源</td><td>★★★★ 官方 README 中文版+CLI i18n</td></tr>
+</table>
+
+<p><b>国内可用性总评</b>：文档维度 dsh（全量双语）与 OpenClaw（官方 zh-CN + 飞书官方生态）领跑；模型接入 Pi（六家原生含 China 专属端点）、Hermes、OpenClaw 最全，Codex 有 DeepSeek 官方一级支持的特殊优势；整链路境内 Hermes（国产模型 + 国内消息平台 + 自托管网关）与 dsh 是最短路径，但两者的企业治理缺口（见 <a href="#sec-4-1">§4.1–4.2</a>）要求落地时自建配套。</p>
+
+<h2 class="pagebreak" id="sec-5">5 场景选型建议</h2>
+
+<h3 id="sec-5-1">5.1 场景 (a)：金融机构内网的合规问答</h3>
+<p><b>需求画像</b>：私有化部署、数据严格不出境、答案可溯源、审计留痕、并发规模有限。</p>
+<div class="box good">
+<p class="bt">推荐：Pydantic-AI（首选）或 LangChain/LangGraph：库层自建 RAG 问答 + 内网模型端点</p>
+<p><b>理由</b>：合规问答是<b>确定性工作流 + 检索</b>，不需要自主执行 shell/文件的 agent 能力——工具执行面就是攻击面，本场景应<b>最小化工具集</b>（只读检索工具），这正是库层甜区：行为可控、每步可审计、对话数据落哪家库带哪个租户列全由企业自定（Pydantic-AI 依赖面最小、SBOM 审计友好，结构化输出 <code>output_type</code> 强制引用字段 schema、校验失败自动回喂）。若流程含多步审批（答案需合规官复核后发布），LangGraph 的 interrupt() / Command(resume) 持久化审批语义现成。</p>
+<p><b>主要风险</b>：检索质量是答案质量的天花板（合规文档多口径表述需检索层显式处理，引用须原文切片直出）；LangGraph 备选时 checkpoint 默认明文存全量对话，须强制 AES + 库权限 + 保留策略；引入执行类工具须自配隔离（库层无沙箱）。</p>
+</div>
+<p><b>否决</b>：OpenClaw / Hermes 多租户隔离不足的个人助手架构，20+ 渠道与工具执行面是多余攻击面（<a href="#sec-4-1">§4.1</a>，OpenClaw 另有 RCE 事件史 <a href="#sec-3-3">§3.3</a>）；dsh preview 状态 + 审计缺口 + 默认日志上传（<a href="#sec-4-1">§4.1–4.2</a>）；Codex 定位错配且默认流量出境；Pi 无权限系统、企业必备件全自建——对本场景"自建"的部分，库层反而更轻。</p>
+
+<h3 id="sec-5-2">5.2 场景 (b)：面向 C 端的高并发客服</h3>
+<p><b>需求画像</b>：水平扩展、低延迟、成本敏感、结构化输出（工单/意图分类）、故障隔离、内容安全。</p>
+<div class="box good">
+<p class="bt">推荐：Pydantic-AI 或 LangGraph：服务端框架层做无状态服务</p>
+<p><b>理由</b>：两者都是库，扩展性 = 你的服务架构的扩展性——请求与资源生命周期由服务方完全掌控；Pydantic-AI 路线 Agent 全局无状态、<code>UsageLimits</code> 预算硬顶、FallbackModel 多模型容灾；LangGraph 路线 checkpointer 挂 Postgres、thread_id 即会话句柄。须写明：<b>它们自身不是现成的多租户 Web 服务</b>——HTTP 服务、任务队列、会话隔离、限流熔断仍需开发团队补齐。</p>
+<p><b>主要风险</b>：结构化输出保证格式、不保证事实——C 端幻觉与内容安全需检索接地 + 审核层兜底；Pydantic-AI v1→v2 有 API 更名、LangChain 处于包布局震荡期，生产须锁精确版本；LangGraph 会话数据全量落 Postgres，需加密与保留策略管控。</p>
+</div>
+<p><b>否决</b>：dsh 虽具备服务化形态（web / headless / sdk / acp 四 profile）但 preview 状态 + 单用户鉴权 + 多租户治理缺口（<a href="#sec-4-1">§4.1–4.2</a>）；Codex 定位与执行抽象偏编码任务；Pi 服务层、隔离与权限系统全部自建；OpenClaw / Hermes 多租户隔离不足（<a href="#sec-4-1">§4.1</a>）——判断口径是"是否建议直接用作生产级 C 端客服平台"，不是"能否用于该场景"（任何工具作底层 Runtime 二次开发，需按 §2.3 误导四单独验证）。</p>
+
+<h3 id="sec-5-3">5.3 场景 (c)：研发团队内部的编码与运维助手</h3>
+<p><b>需求画像</b>：真实编码能力、命令执行、沙箱隔离、审批、企业统一治理、国产模型可接。</p>
+<div class="box good">
+<p class="bt">推荐：Codex CLI 为当前优先考虑的生产工具；dsh 为国产化 Runtime 的优先 PoC / 二次开发候选；OpenClaw 作消息化入口（可选）</p>
+<p><b>理由</b>：Codex <b>沙箱 7 者最强</b>（三平台内核级强制）+ <b>requirements.toml 是 7 者中唯一的管理员强制配置体系</b>，天然适配企业统一管控（<a href="#sec-4-1">§4.1</a>）；DeepSeek 官方一级支持，日常推理流量可不经 OpenAI（<a href="#sec-4-5">§4.5</a>）。dsh 第一方 + 全量双语文档 + 任意兼容端点三协议，但 preview 状态 + 审计能力 + 默认日志上传三重治理缺口（<a href="#sec-4-1">§4.1–4.2</a>），<b>当前证据不足以支持其作为 Codex 的生产替代</b>——定位为国产化 Runtime 的优先 PoC，试点中必须显式关闭 session-log 上传；<b>国产模型可接入 ≠ Harness 已适合生产落地</b>。可选叠加 OpenClaw：把 Codex 挂为 harness 插件、经飞书/钉钉渠道给团队提供消息化入口（飞书官方插件，生产可用）。</p>
+<p><b>主要风险</b>：两者上生产前均应经过<b>内部安全评审、任务成功率与模型兼容性测试</b>——本报告证据可支撑"Codex 优先考虑、dsh 优先 PoC"的排序，不足以替代企业内部验证；Codex <code>wire_api</code> 锁死 Responses 协议——第三方网关必须实现 Responses 兼容端点（国产模型中 DeepSeek 原生支持）；周级发版要求企业锁版本 + 跟踪 changelog；OpenClaw 叠加层必须走加固基线（沙箱全开 + 审批不默认关闭）并跟踪其安全披露。</p>
+</div>
+<p><b>否决</b>：LangChain/LangGraph、Pydantic-AI 库层要从零造 harness——TUI、会话、沙箱、审批全自建，对"给研发团队一个能用工具"的目标是重复发明；Pi 无内置权限系统/沙箱，企业必备件全自建——适合有 TS 平台工程团队当底座二次开发，不适合直接下发；Hermes 个人助手形态，沙箱 / 治理 / IDE 集成不如 Codex 专精。</p>
+
+<h3 id="sec-5-4">5.4 场景 (d)：需要长期记忆的个人或团队助理</h3>
+<p><b>需求画像</b>：跨会话记忆质量、多渠道触达、主动性、7×24 无人值守、隐私可控。</p>
+<div class="box good">
+<p class="bt">推荐：国内平台生态 → Hermes-Agent；国际渠道 → OpenClaw（同层直接竞品，二选一）</p>
+<p><b>理由</b>：Hermes（国内首选）记忆工程化扎实（冻结快照保前缀缓存 + 跨会话全文检索）+ <b>国内消息平台适配 7 者最深</b>（微信/企微/钉钉/飞书/QQ 官方 API 直连、免公网端点）+ 状态持久化工程化罕见（SQLite+WAL、跨整机重启自动续接会话）+ HITL 三档硬底线适合无人值守。OpenClaw（国际渠道首选）记忆体系文档层最完整（五层 + 防投毒溯源 + 混合检索 + 常驻意图）+ 模型与 harness 双插件化 + 治理与披露文化成熟。选择轴：渠道生态 + 安全偏好（审批分层→Hermes；供应链防御→OpenClaw）。</p>
+<p><b>主要风险</b>：两者都是"个人/小团队可信操作员"设计——多用户共享需隔离自建（非多租户）；OpenClaw 事件史要求加固与版本跟踪；Hermes 日更量级要锁版本；微信个人号群聊受限。</p>
+<p><b>核心判断标准：记忆系统最重要的不是能存多少，而是能否在正确的时间把正确的信息提供给正确的用户。</b>机制不直接等于记忆效果——公开的记忆质量评测数据不存在，落地前应按记忆七指标自建评测（两工具设计机制对照见调研卡）。<b>团队场景注意 Memory Isolation</b>：两者默认以 agent 为记忆边界——团队共享一个助理即共享全部记忆，可行解是按成员拆分 agent 或显式接受团队级共享。</p>
+</div>
+<p><b>否决</b>：Codex memories 长期记忆默认关闭（§3.2）、无消息渠道——编码工具不是团队助理；Pi 无内建长期记忆（极简哲学要求记忆自建或装包）；dsh 长期记忆无内置（仅三个默认关闭的第三方 MCP 参考）；库层两者记忆、渠道、守护进程全要自建，达到产品层体验的工程量不经济。</p>
+
+<h3 id="sec-5-5">5.5 题目 2：招股书可溯源问答 Agent 的工具组合</h3>
+
+<p>题目 2 的核心是面向固定金融数据集的可溯源问答，涉及 PDF 文档与结构化数据库两类数据源，要求支持信息检索、SQL 查询、数值计算、原文引用、拒答和严格结构化输出。其主要挑战在于数据处理、证据检索与结果校验，而非 Agent 自主规划和执行复杂任务。</p>
+
+<div class="box good">
+<p class="bt">推荐组合：Pydantic-AI + 自建数据处理与检索层 + 确定性工具</p>
+<ul>
+<li><b>Agent 框架</b>：Pydantic-AI——作为轻量 SDK 嵌入批处理入口，负责问题理解、工具调用、任务路由和结构化输出；其类型约束与输出校验机制适合本题严格的 JSON Schema 要求</li>
+<li><b>数据处理与检索</b>：独立实现——PDF 解析、表格抽取、跨页合并、页码映射和混合检索属于数据工程能力，不应依赖 Agent 框架完成；检索层负责返回带文档 ID、页码和原文片段的证据</li>
+<li><b>工具层</b>：确定性实现——SQL 查询、单位换算、增长率计算和证据校验通过独立工具完成，避免将数据库安全与数值准确性寄托于 LLM</li>
+<li><b>模型层</b>：可替换的国产模型 API——根据工具调用能力、结构化输出稳定性、中文效果和成本进行实测选择</li>
+</ul>
+<p><b>关键边界</b>：Pydantic-AI 能保证输出结构符合 Schema，但不能保证引用真实、数值正确、证据完整——这些能力必须由检索、原文定位、确定性计算和校验组件提供，这正是 Agent 框架与业务工程组件的职责划分。</p>
+</div>
+
+<p><b>其他工具的适配性</b>：</p>
+<ul>
+<li><b>LangChain / LangGraph</b> 是可行备选，生态集成和复杂流程编排能力更丰富；若后续增加多阶段状态管理、持久化恢复或人工审批，可考虑引入 LangGraph</li>
+<li><b>Codex CLI、Pi 和 dsh</b> 更偏向 Agent 执行与编码任务场景，虽然具备不同程度的非交互运行能力，但不是本题轻量问答服务的首选</li>
+<li><b>OpenClaw 和 Hermes-Agent</b> 面向持续运行的助手产品，其消息渠道、长期记忆和审批机制超出本题必要范围</li>
+</ul>
+
+<p><b>主要风险与对策</b>：</p>
+<ul>
+<li><b>版本 API 变动</b>：Pydantic-AI v1→v2 曾发生 API 更名，社区中文资料可能停留在旧版——只用官方文档并锁精确版本</li>
+<li><b>模型能力参差</b>：国产模型的工具调用与结构化输出稳定性不一（调研实证：部分推理系模型不支持工具调用与结构化输出，仅对话系可用），型号须按题目题型实测选定</li>
+<li><b>数值与引用精度</b>：0.5% 相对误差与引用"原文片段逐字可查"是硬指标——计算一律走确定性工具，quote 用原文切片直出、零改写</li>
+<li><b>长列表完整性</b>："列出全部风险因素"类问题须按招股书章节结构召回并输出条目数——靠章节感知分块，而非机械定长切块</li>
+</ul>
+
+<p><b>结论：</b>本题应优先选择库 / SDK 层，以 Pydantic-AI 承担 Agent 控制与结构化交互，数据解析、检索、SQL 和计算由独立确定性组件完成。<b>核心原则是让 LLM 负责理解与决策，让确定性程序负责数据处理、计算和证据校验。</b></p>
+
+<h2 class="pagebreak" id="sec-6">6 附录：调研方法与信息来源</h2>
+
+<h3 id="sec-6-1">6.1 调研方法</h3>
+<p>五阶段流水线：存在性核实 → 文档级调研卡（7 份统一模板）→ 源码深读（三代表仓库克隆逐文件阅读，<a href="#sec-3">§3</a> 源码引用出自深读笔记 <code>research/*-deep.md</code>，完整文件清单、行号与统计数字见各调研卡）→ 综合写作（只依赖落盘调研产物）→ 引用抽查终检。<b>反幻觉纪律</b>：调研中与任务书预设冲突的结论（如"FastMCP 已捐给 Pydantic"被证伪、Codex 多处流传口径被源码推翻）均以查证证据为准修正——本报告不保留任何未经佐证的论断。</p>
+
+<h3 id="sec-6-2">6.2 "查无实据"核实记录</h3>
+<p>本报告<b>未发生</b>"工具查无此物"的情形。如实标注的"未找到"项：LangGraph OSS 层原生 OTel exporter；OpenClaw checkpoint / time-travel 专门功能与产品内评测框架；Pi 内建长期记忆（官方哲学明示不做）；Pydantic-AI 智谱内置 provider 与 vLLM 官方 provider 页；dsh 独立分布式 trace 视图与产品级评测数据集——替代接入路径与详情见调研卡。</p>
+
+<h3 id="sec-6-3">6.3 信息源与版本锚定</h3>
+
+<p><b>源码引用基准</b>——正文源码路径均相对下表仓库根，关键论断挂源码永久链接（permalink）：</p>
+<table class="avoid">
+<thead><tr><th style="width:16%">项目</th><th style="width:26%">引用基准</th><th style="width:38%">永久链接</th><th style="width:20%">访问日期</th></tr></thead>
+<tr><td><b>LangGraph</b></td><td>main 分支 commit <code>3c916d7</code>（v1.2.19 后数个提交）</td><td class="src"><a href="https://github.com/langchain-ai/langgraph/tree/3c916d750575b22c464790e9774494d810ccd322">github.com/langchain-ai/langgraph/tree/3c916d7</a></td><td>2026-11-03</td></tr>
+<tr><td><b>Codex CLI</b></td><td>main 分支 commit <code>bfdbf01</code></td><td class="src"><a href="https://github.com/openai/codex/tree/bfdbf01">github.com/openai/codex/tree/bfdbf01</a></td><td>2026-11-03</td></tr>
+<tr><td><b>OpenClaw</b></td><td>main 分支 commit <code>4285c6ce</code>（CalVer 2026.10.10 线）</td><td class="src"><a href="https://github.com/openclaw/openclaw/tree/4285c6ce">github.com/openclaw/openclaw/tree/4285c6ce</a></td><td>2026-11-03</td></tr>
+<tr><td><b>dsh / Hermes</b></td><td>当日 master / main 快照（调研卡存档路径）</td><td class="src"><a href="https://github.com/deepseek-ai/deepseek-harness">github.com/deepseek-ai/deepseek-harness</a> ｜ <a href="https://github.com/NousResearch/hermes-agent">github.com/NousResearch/hermes-agent</a></td><td>2026-11-03</td></tr>
+</table>
+
+<p><b>官方文档核心页面</b>（正文论断的主要文档出处，访问日期同上；其余出处见调研卡）：LangChain/LangGraph <a class="src" href="https://docs.langchain.com/oss/python/langgraph/persistence">langgraph/persistence</a>（checkpoint 体系）｜ Pydantic-AI <a class="src" href="https://ai.pydantic.dev/">ai.pydantic.dev</a> ｜ dsh <a class="src" href="https://github.com/deepseek-ai/deepseek-harness/tree/master/docs/subsystems">docs/subsystems</a>（session/sandbox/approval/tools）｜ Codex CLI <a class="src" href="https://developers.openai.com/codex/config-reference">config-reference</a>（配置全表）｜ Pi <a class="src" href="https://pi.dev/docs/latest/extensions">extensions</a>（扩展体系）｜ OpenClaw <a class="src" href="https://docs.openclaw.ai/concepts/memory-architecture">memory-architecture</a>（记忆体系）｜ Hermes-Agent <a class="src" href="https://hermes-agent.nousresearch.com/docs/user-guide/security">user-guide/security</a>（审批与黑名单）。</p>
+
+<p><b>注册表与第三方佐证</b>：npm / PyPI registry API（包名、版本、周下载量核实，2026-11-03）；安全事件佐证——CCB Belgium 公告（ccb.belgium.be，1-click RCE advisory）、SentinelOne / Cisco / Immersive Labs 分析、arXiv:2503.03704（记忆投毒 MINJA）等。完整 URL 清单见随附调研卡 <code>research/*.md</code>。</p>
+
+<p class="small" style="margin-top:18pt;color:#888">报告生成：2026-11-03 ｜ 本报告结论有效期受各项目周级迭代速度约束，重大决策前建议以当日官方仓库复核关键口径。</p>
+
+
+
+</body>
+</html>
