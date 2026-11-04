@@ -98,11 +98,12 @@
 <tr><td><b>LangChain</b><br><b>LangGraph</b></td><td>SDK</td><td>Checkpoint</td><td>Store（跨会话）</td><td>interrupt / Command</td><td>自建</td><td>Client</td><td>—</td></tr>
 <tr><td><b>Pydantic-AI</b></td><td>SDK</td><td>会话存储</td><td>未实现（配套包不计入）</td><td>Deferred Tools</td><td>自建</td><td>Client（+FastMCP 打包 Server）</td><td>—</td></tr>
 <tr><td><b>dsh</b></td><td>Harness</td><td>事件溯源日志</td><td>未内置（仅 MCP 参考）</td><td>双旋钮审批</td><td>原生三平台（Win 不完整）</td><td>Client</td><td>ACP Server</td></tr>
-<tr><td><b>Codex CLI</b></td><td>Harness</td><td>Rollout JSONL</td><td>已实现、默认关闭</td><td>两轴 + granular</td><td>内核级三平台（最强）</td><td>Client（Server 已移除）</td><td>—</td></tr>
+<tr><td><b>Codex CLI</b></td><td>Harness</td><td>Rollout JSONL</td><td>已实现、默认关闭</td><td>两轴 + granular</td><td>内核级三平台（同层最强）</td><td>Client（Server 已移除）</td><td>—</td></tr>
 <tr><td><b>Pi</b></td><td>Harness</td><td>JSONL 会话树</td><td>未实现（哲学：自建/装包）</td><td>扩展实现（无内置）</td><td>外部容器</td><td>Client（内置客户端可换）</td><td>—</td></tr>
 <tr><td><b>OpenClaw</b></td><td>产品</td><td>SQLite 会话库</td><td>较完整（五层+溯源）</td><td>渠道内审批</td><td>可选（默认关）</td><td>Client + Server</td><td>ACP Host</td></tr>
 <tr><td><b>Hermes</b></td><td>产品</td><td>SQLite + WAL</td><td>较完整（文件式+FTS5）</td><td>三档 + 硬底线</td><td>多后端（local→云沙箱）</td><td>Client</td><td>ACP Server</td></tr>
 </table>
+<p class="small">Checkpoint、Store 和 interrupt/Command 为 LangGraph 的能力；LangChain 的 create_agent 基于 LangGraph Runtime 实现，两者的抽象层级与职责不同。</p>
 
 <p><b>四场景推荐结论</b>（论证见 <a href="#sec-5">§5</a>）：(a) 金融机构内网合规问答 → 库层自建 RAG + 内网模型；(b) C 端高并发客服 → 库层做无状态服务；(c) 研发编码运维助手 → Codex CLI 为当前生产工具（配企业策略管理）、dsh 为国产化 Runtime 的 PoC / 二次开发候选；(d) 长期记忆助理 → 国内生态 Hermes-Agent、国际渠道 OpenClaw 二选一。题目 2（招股书问答 Agent）选型：Pydantic-AI + 自建确定性层 + 国产模型实测选型（论证见 <a href="#sec-5-5">§5.5</a>）。</p>
 
@@ -406,7 +407,7 @@
 <tr><td><b>LangChain/LangGraph</b></td><td>无（库层不管；LangSmith Sandboxes 为境外 SaaS）</td><td>无内置，代码级自建</td></tr>
 <tr><td><b>Pydantic-AI</b></td><td>无（核心库不管执行隔离）</td><td>Deferred Tools 审批（<b>官方明示"非授权边界"</b>，端点鉴权自理）</td></tr>
 <tr><td><b>dsh</b></td><td>Linux bwrap / Landlock、macOS Seatbelt、<b>Windows 隔离不完整</b>（自报告）；无后端即拒（fail-closed）</td><td>沙箱三模式 × 审批两旋钮 + 预设组合；审批默认拒绝（fail-closed）</td></tr>
-<tr><td><b>Codex CLI</b></td><td><b>7 者最强</b>：三平台内核级强制（Windows 默认 Disabled 自动降级 read-only）</td><td>两轴正交 + granular 五开关；<b>requirements.toml 管理员强制为同类独有</b>——但审批档位<b>不等同企业 RBAC</b></td></tr>
+<tr><td><b>Codex CLI</b></td><td><b>Harness 层最强</b>：三平台内核级强制（Windows 默认 Disabled 自动降级 read-only）+ 管理员强制策略</td><td>两轴正交 + granular 五开关；<b>requirements.toml 管理员强制为同类独有</b>——但审批档位<b>不等同企业 RBAC</b></td></tr>
 <tr><td><b>Pi</b></td><td><b>无内置</b>，官方文档化容器化三模式</td><td>无内置权限系统；扩展钩子可拦截 + 界面确认；项目信任只管加载不管工具</td></tr>
 <tr><td><b>OpenClaw</b></td><td><span class="neg"><b>⚠ 单一信任域：一个 Gateway = 一个受信任操作员边界（官方明示），工具审批不是多租户授权边界</b></span>——企业安全评价的第一前提；容器沙箱体系完整但<b>默认关闭</b></td><td>五档 exec 策略 + 多层工具准入 + 渠道配对身份门 + elevated 提权双门</td></tr>
 <tr><td><b>Hermes-Agent</b></td><td>靠终端后端：local 无隔离（靠审批层）+ Docker 硬化容器 + SSH / 云沙箱</td><td><b>审批分层最细</b>：三档 + 无人值守默认拒绝 + 硬底线黑名单（全放行也越不过）</td></tr>
@@ -430,8 +431,8 @@
 
 <table>
 <thead><tr><th style="width:13%">工具</th><th style="width:20%">私有化部署</th><th style="width:34%">数据不出境能力（关键差异）</th><th style="width:33%">审计留痕</th></tr></thead>
-<tr><td><b>LangChain/LangGraph</b></td><td>纯库内嵌或 Agent Server 自托管 docker</td><td>✅ 核心链路零境外依赖（LangSmith 可选不装即无外发）；checkpoint 默认<b>明文存全量对话</b>，须强制 AES+库权限+保留策略</td><td>callback 体系接自建后端；无原生 OTel exporter</td></tr>
-<tr><td><b>Pydantic-AI</b></td><td>纯库自托管，无云依赖</td><td>✅ 最干净：模型端点全自定（内网 vLLM）+ Logfire 不装即零外发（装了可 <code>include_content=False</code> 或改发自建 OTLP）</td><td>原生 OTel 三信号，接国产 OTLP 后端</td></tr>
+<tr><td><b>LangChain/LangGraph</b></td><td>纯库内嵌或 Agent Server 自托管 docker</td><td>✅ 框架侧零强制境外依赖（LangSmith 可选不装即无外发）；checkpoint 默认<b>明文存全量对话</b>，须强制 AES+库权限+保留策略</td><td>callback 体系接自建后端；无原生 OTel exporter</td></tr>
+<tr><td><b>Pydantic-AI</b></td><td>纯库自托管，无云依赖</td><td>✅ 框架零强制外发：模型端点全自定（内网 vLLM）+ Logfire 不装即无外发（装了可 <code>include_content=False</code> 或改发自建 OTLP）</td><td>原生 OTel 三信号，接国产 OTLP 后端</td></tr>
 <tr><td><b>dsh</b></td><td>dsh web 默认只监听本机</td><td>⚠️ <b>重大红线：默认启用 <a href="https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/session/session-log-deepseek">dsh-session-log-deepseek</a>——用官方 API 时每请求附带最高 8 MiB 增量会话日志上传 DeepSeek</b>（境内方向但金融必须显式关闭）；遥测可彻底关闭</td><td>审批记录落持久日志；但<b>无集中审计管道、无 SSO/RBAC</b></td></tr>
 <tr><td><b>Codex CLI</b></td><td>本地运行无强制云组件</td><td>⚠️ 默认模式模型流量+OTel 指标出境至 OpenAI；API-key+境内端点模式日常流量不经 OpenAI；<code>enforce_residency</code> 仅锁 us</td><td>rollout JSONL 会话真相源 + SQLite logs + OTel 可指自建端点（支持 mTLS）</td></tr>
 <tr><td><b>Pi</b></td><td>纯本地（模型目录缓存离线可用）</td><td>✅ 运行时唯一外联=模型端点（可全国内/本地）；/share 与 /bug 上传需禁用</td><td>无内建 OTel 导出；<code>tool_execution_end</code> 扩展钩子是自建审计日志的正确挂点</td></tr>
@@ -439,7 +440,7 @@
 <tr><td><b>Hermes-Agent</b></td><td>自托管完整（含 Docker 沙箱镜像）；<span class="neg">Hermes Cloud 在境外云，境内只走自托管</span></td><td>✅ 所有状态本地 ~/.hermes；<b>消息网关直连平台官方 API、不经 Nous 服务器</b>；OTLP 无内容导出</td><td>会话全量落 SQLite+FTS5 可检索；OTLP 可接自建 Collector；无 RBAC 产品模块</td></tr>
 </table>
 
-<p><b>许可证横向</b>：7 者全部 MIT 或 Apache-2.0（Codex），商用无限制。合规分水岭不在许可证而在<b>数据流向的默认值</b>——默认零外发：Pydantic-AI / Pi / LangGraph；数据本地、渠道与 provider 流量直连境外服务商（可配国产端点）：OpenClaw / Hermes；默认出境（可改）：Codex；有一个必须显式关闭的默认上传项：dsh。</p>
+<p><b>口径说明</b>：表中"外发"指框架自身默认行为——运行时是否出境还取决于模型端点、遥测/日志与第三方工具配置（配内网端点 + 关闭可选遥测即可全境内）。<b>许可证横向</b>：7 者全部 MIT 或 Apache-2.0（Codex），商用无限制。合规分水岭不在许可证而在<b>数据流向的默认值</b>——框架默认零外发：Pydantic-AI / Pi / LangGraph；数据本地、渠道与 provider 流量直连境外服务商（可配国产端点）：OpenClaw / Hermes；默认出境（可改）：Codex；有一个必须显式关闭的默认上传项：dsh。</p>
 
 <h3 id="sec-4-3">4.3 成本：token 开销放大因素与运维成本</h3>
 
@@ -471,8 +472,8 @@
 
 <table style="table-layout:fixed">
 <thead><tr><th style="width:13%">工具</th><th style="width:32%">国产模型接入</th><th style="width:25%">无境外网络依赖运行</th><th style="width:30%">中文资料</th></tr></thead>
-<tr><td><b>LangChain /<br>LangGraph</b></td><td>DeepSeek/Ollama 官方合作包；Qwen 走第三方、智谱走 community 包</td><td>✅ 核心链路零境外依赖；LangSmith 可选</td><td>★★★★★ 官方生态外中文教程最厚</td></tr>
-<tr><td><b>Pydantic-AI</b></td><td>DeepSeek/通义/月之暗面官方 Provider；智谱走兼容端点</td><td>✅ 零外联（模型端点全自定）</td><td>★★☆ 无官方中文，社区镜像停在 v1 时代</td></tr>
+<tr><td><b>LangChain /<br>LangGraph</b></td><td>DeepSeek/Ollama 官方合作包；Qwen 走第三方、智谱走 community 包</td><td>✅ 框架零强制境外依赖；LangSmith 可选</td><td>★★★★★ 官方生态外中文教程最厚</td></tr>
+<tr><td><b>Pydantic-AI</b></td><td>DeepSeek/通义/月之暗面官方 Provider；智谱走兼容端点</td><td>✅ 可全境内（模型端点全自定）</td><td>★★☆ 无官方中文，社区镜像停在 v1 时代</td></tr>
 <tr><td><b>dsh</b></td><td>内置 DeepSeek/GLM/Kimi + 任意兼容端点三协议</td><td>✅ anthropic/openai 可完全不配；遥测可全关</td><td>★★★★★ <b>唯一全量中英双语文档</b>（.zh.md 成对）</td></tr>
 <tr><td><b>Codex CLI</b></td><td><b>DeepSeek 官方一级支持</b>（中文文档+一键脚本+原生 Responses API）</td><td>⚠️ API-key+境内端点可行；安装/OAuth 默认域名需代理</td><td>★★★★ DeepSeek 官方中文文档+知乎/腾讯云多篇</td></tr>
 <tr><td><b>Pi</b></td><td><b>原生内置最全</b>：六家国产厂商带专属 env key（多家含 China 专属端点）</td><td>✅ 运行时唯一外联=模型端点；pi.dev/GitHub/npm 在境外国（镜像解决）</td><td>★★★ 无官方中文；runoob/知乎/B 站已有规模</td></tr>
@@ -497,7 +498,7 @@
 <p><b>需求画像</b>：水平扩展、低延迟、成本敏感、结构化输出（工单/意图分类）、故障隔离、内容安全。</p>
 <div class="box good">
 <p class="bt">推荐：Pydantic-AI 或 LangGraph：服务端框架层做无状态服务</p>
-<p><b>理由</b>：两者都是库，扩展性 = 你的服务架构的扩展性——请求与资源生命周期由服务方完全掌控；Pydantic-AI 路线 Agent 全局无状态、<code>UsageLimits</code> 预算硬顶、FallbackModel 多模型容灾；LangGraph 路线 checkpointer 挂 Postgres、thread_id 即会话句柄。须写明：<b>它们自身不是现成的多租户 Web 服务</b>——HTTP 服务、任务队列、会话隔离、限流熔断仍需开发团队补齐。</p>
+<p><b>理由</b>：两者都是库，扩展性 = 你的服务架构的扩展性——请求与资源生命周期由服务方完全掌控；Pydantic-AI 路线 Agent 全局无状态、<code>UsageLimits</code> 限制单次运行的请求数/工具调用/Token 与估算成本（成本限制依赖模型计量信息，跨请求与租户预算仍需外部系统管理）、FallbackModel 多模型容灾；LangGraph 路线 checkpointer 挂 Postgres、thread_id 即会话句柄。须写明：<b>它们自身不是现成的多租户 Web 服务</b>——HTTP 服务、任务队列、会话隔离、限流熔断仍需开发团队补齐。</p>
 <p><b>主要风险</b>：结构化输出保证格式、不保证事实——C 端幻觉与内容安全需检索接地 + 审核层兜底；Pydantic-AI v1→v2 有 API 更名、LangChain 处于包布局震荡期，生产须锁精确版本；LangGraph 会话数据全量落 Postgres，需加密与保留策略管控。</p>
 </div>
 <p><b>否决</b>：dsh 虽具备服务化形态（web / headless / sdk / acp 四 profile）但 preview 状态 + 单用户鉴权 + 多租户治理缺口（<a href="#sec-4-1">§4.1–4.2</a>）；Codex 定位与执行抽象偏编码任务；Pi 服务层、隔离与权限系统全部自建；OpenClaw / Hermes 多租户隔离不足（<a href="#sec-4-1">§4.1</a>）——判断口径是"是否建议直接用作生产级 C 端客服平台"，不是"能否用于该场景"（任何工具作底层 Runtime 二次开发，需按 §2.3 误导四单独验证）。</p>
@@ -506,7 +507,7 @@
 <p><b>需求画像</b>：真实编码能力、命令执行、沙箱隔离、审批、企业统一治理、国产模型可接。</p>
 <div class="box good">
 <p class="bt">推荐：Codex CLI 为当前优先考虑的生产工具；dsh 为国产化 Runtime 的优先 PoC / 二次开发候选；OpenClaw 作消息化入口（可选）</p>
-<p><b>理由</b>：Codex <b>沙箱 7 者最强</b>（三平台内核级强制）+ <b>requirements.toml 是 7 者中唯一的管理员强制配置体系</b>，天然适配企业统一管控（<a href="#sec-4-1">§4.1</a>）；DeepSeek 官方一级支持，日常推理流量可不经 OpenAI（<a href="#sec-4-5">§4.5</a>）。dsh 第一方 + 全量双语文档 + 任意兼容端点三协议，但 preview 状态 + 审计能力 + 默认日志上传三重治理缺口（<a href="#sec-4-1">§4.1–4.2</a>），<b>当前证据不足以支持其作为 Codex 的生产替代</b>——定位为国产化 Runtime 的优先 PoC，试点中必须显式关闭 session-log 上传；<b>国产模型可接入 ≠ Harness 已适合生产落地</b>。可选叠加 OpenClaw：把 Codex 挂为 harness 插件、经飞书/钉钉渠道给团队提供消息化入口（飞书官方插件，生产可用）。</p>
+<p><b>理由</b>：Codex <b>沙箱为 harness 层最强</b>（三平台内核级强制）+ <b>requirements.toml 是 7 者中唯一的管理员强制配置体系</b>，天然适配企业统一管控（<a href="#sec-4-1">§4.1</a>）；DeepSeek 官方一级支持，日常推理流量可不经 OpenAI（<a href="#sec-4-5">§4.5</a>）。dsh 第一方 + 全量双语文档 + 任意兼容端点三协议，但 preview 状态 + 审计能力 + 默认日志上传三重治理缺口（<a href="#sec-4-1">§4.1–4.2</a>），<b>当前证据不足以支持其作为 Codex 的生产替代</b>——定位为国产化 Runtime 的优先 PoC，试点中必须显式关闭 session-log 上传；<b>国产模型可接入 ≠ Harness 已适合生产落地</b>。可选叠加 OpenClaw：把 Codex 挂为 harness 插件、经飞书/钉钉渠道给团队提供消息化入口（飞书官方插件，生产可用）。</p>
 <p><b>主要风险</b>：两者上生产前均应经过<b>内部安全评审、任务成功率与模型兼容性测试</b>——本报告证据可支撑"Codex 优先考虑、dsh 优先 PoC"的排序，不足以替代企业内部验证；Codex <code>wire_api</code> 锁死 Responses 协议——第三方网关必须实现 Responses 兼容端点（国产模型中 DeepSeek 原生支持）；周级发版要求企业锁版本 + 跟踪 changelog；OpenClaw 叠加层必须走加固基线（沙箱全开 + 审批不默认关闭）并跟踪其安全披露。</p>
 </div>
 <p><b>否决</b>：LangChain/LangGraph、Pydantic-AI 库层要从零造 harness——TUI、会话、沙箱、审批全自建，对"给研发团队一个能用工具"的目标是重复发明；Pi 无内置权限系统/沙箱，企业必备件全自建——适合有 TS 平台工程团队当底座二次开发，不适合直接下发；Hermes 个人助手形态，沙箱 / 治理 / IDE 集成不如 Codex 专精。</p>
