@@ -88,11 +88,11 @@
 
 <p><b>发现一：七者分三层，层间是上下游关系而非竞品关系。</b>库/SDK（LangChain/LangGraph、Pydantic-AI）回答"用什么造 Agent"，Runtime/Harness（Codex CLI、dsh、Pi）回答"用什么跑 Agent"，成品/产品（OpenClaw、Hermes-Agent）回答"直接用哪个助手"。跨层直比会误导选型，公平比较方法是分层各回答一个问题（归层依据与关系图见 <a href="#sec-2">§2</a>）。</p>
 
-<p><b>发现二：能力开箱程度随层级上升，定制空间随之收窄。</b>产品层开箱即是能用的助手（长期记忆、20+ 消息渠道），harness 层把执行隔离与审批做得最完整（Codex 沙箱内核级三平台），库层可控性最强、但沙箱与审批须完全自建（长期记忆仅 LangGraph Store 内置）。这是分工而非差距，本报告按四态（已实现／默认启用／实验性·可选／未实现）如实标注（七维度深析见 <a href="#sec-3">§3</a>）。</p>
+<p><b>发现二：能力开箱程度随层级上升，定制空间随之收窄。</b>产品层开箱即是能用的助手（长期记忆、20+ 消息渠道），harness 层把执行隔离与审批做得最完整（Codex 沙箱内核级三平台），库层可控性最强、但沙箱与审批须完全自建（长期记忆仅 LangGraph Store 内置）。这是分工而非差距（七维度深析见 <a href="#sec-3">§3</a>）。</p>
 
 <p><b>发现三：企业落地的门槛不在许可证与模型接入，而在治理配套。</b>七者许可证均为 MIT/Apache-2.0，国产模型接入均有原生路径；真正普遍缺失的是权限治理与审计的产品化——OpenClaw 官方明示单一信任域，Codex 审批档位不等同企业 RBAC，金融级落地都须在工具之外补齐治理层（五维度评估见 <a href="#sec-4">§4</a>）。</p>
 
-<p><b>七工具总览</b>——30 秒建立整体认知（口径：长期记忆按四态标注见 <a href="#sec-3">§3</a>，MCP/ACP 按角色标注、方向明细见 <a href="#sec-2-2">§2.2</a>）：</p>
+<p><b>七工具总览</b>（口径：长期记忆按四态标注见 <a href="#sec-3">§3</a>，MCP/ACP 按角色标注、方向明细见 <a href="#sec-2-2">§2.2</a>）：</p>
 <table class="avoid">
 <thead><tr><th style="width:15%">工具</th><th style="width:11%">分层</th><th style="width:14%">状态管理</th><th style="width:13%">长期记忆</th><th style="width:12%">HITL</th><th style="width:13%">沙箱</th><th style="width:13%">MCP</th><th style="width:9%">ACP</th></tr></thead>
 <tr><td><b>LangChain</b><br><b>LangGraph</b></td><td>SDK</td><td>Checkpoint</td><td>Store（跨会话）</td><td>interrupt / Command</td><td>自建</td><td>Client</td><td>—</td></tr>
@@ -108,7 +108,7 @@
 
 <h2 id="sec-1">1 存在性核实</h2>
 
-<p>第一步对全部 7 个指代做存在性核实（GitHub API + 官网 + npm/PyPI 注册表双通道互证），结果汇总如下：</p>
+<p>7 个指代均经 GitHub API + 官网 + npm/PyPI 注册表双通道核实：</p>
 
 <table>
 <thead><tr><th>工具</th><th>核实指代（org/repo）</th><th>存在性</th><th>最新 release</th><th>许可证</th></tr></thead>
@@ -306,7 +306,7 @@
 <p><b>机制</b>　<code>interrupt(value)</code>（<a href="https://github.com/langchain-ai/langgraph/blob/3c916d750575b22c464790e9774494d810ccd322/libs/langgraph/langgraph/types.py#L903"><code>types.py</code></a>）抛出中断，被 runner 的 <code>commit()</code> 捕获，把中断点当作未完成写入存进状态——"等待人工"与"进程崩溃"在存储层是同一种东西；<code>Command(resume=...)</code> 时节点从头重放，已答过的审批不重复问；另支持 <code>response_schema</code> 类型化审批表单。<br><b>证据</b>　<code>types.py</code>、<code>pregel/_runner.py</code>（permalink 见上）。<br><b>判断</b>　恢复语义统一；坑写进文档——节点重跑意味着 interrupt 前代码会再执行（副作用须幂等），不可用 try/except 包 interrupt。</p>
 
 <h4>⑥ 可观测性：❌ 原生 OTel 未实现，走 callback 体系自建</h4>
-<p><b>机制</b>　观测走 langchain-core callback 体系接自建后端（Langfuse 等有现成集成）；评测集成不内置。<br><b>证据</b>　OSS 层无原生 OTel exporter——全仓 grep 仅测试文件命中；主包 deps 不含 LangSmith。<br><b>判断</b>　原生 OTel <b>未实现</b>、如实报告；LangSmith 完全可选，不配置即无外发。</p>
+<p><b>机制</b>　观测走 langchain-core callback 体系接自建后端（Langfuse 等有现成集成）；评测集成不内置。<br><b>证据</b>　OSS 层无原生 OTel exporter——全仓 grep 仅测试文件命中；主包 deps 不含 LangSmith。<br><b>判断</b>　原生 OTel <b>未实现</b>；LangSmith 完全可选，不配置即无外发。</p>
 
 <h4>⑦ 部署与许可证：✅ 引擎全 MIT，可完全自托管</h4>
 <p><b>机制</b>　七包全 MIT（逐一核对 pyproject）；生产最小组合 = <code>langgraph + langgraph-checkpoint-postgres</code> + 自写 ASGI 入口；沙箱不内置（库层不直接执行环境操作）。<br><b>证据</b>　API server 本体在独立包 <code>langgraph-api</code>（<code>langgraph-cli</code> 的 <code>up</code> import 之）。<br><b>判断</b>　自托管完整；供应链注记——langchain-community 包正在停维护收缩（sunset），依赖只走主线包。</p>
@@ -490,7 +490,7 @@
 <p><b>需求画像</b>：私有化部署、数据严格不出境、答案可溯源、审计留痕、并发规模有限。</p>
 <div class="box good">
 <p class="bt">推荐：Pydantic-AI（首选）或 LangChain/LangGraph：库层自建 RAG 问答 + 内网模型端点</p>
-<p><b>理由</b>：合规问答是<b>确定性工作流 + 检索</b>，不需要自主执行 shell/文件的 agent 能力——工具执行面就是攻击面，本场景应<b>最小化工具集</b>（只读检索工具），这正是库层甜区：行为可控、每步可审计、对话数据落哪家库带哪个租户列全由企业自定（Pydantic-AI 依赖面最小、SBOM 审计友好，结构化输出 <code>output_type</code> 强制引用字段 schema、校验失败自动回喂）。若流程含多步审批（答案需合规官复核后发布），LangGraph 的 interrupt() / Command(resume) 持久化审批语义现成。</p>
+<p><b>理由</b>：合规问答是<b>确定性工作流 + 检索</b>，不需要自主执行 shell/文件的 agent 能力——工具执行面就是攻击面，本场景应<b>最小化工具集</b>（只读检索工具）——库层甜区：行为可控、每步可审计、对话数据落哪家库带哪个租户列全由企业自定（Pydantic-AI 依赖面最小、SBOM 审计友好，结构化输出 <code>output_type</code> 强制引用字段 schema、校验失败自动回喂）。若流程含多步审批（答案需合规官复核后发布），LangGraph 的 interrupt() / Command(resume) 持久化审批语义现成。</p>
 <p><b>主要风险</b>：检索质量是答案质量的天花板（合规文档多口径表述需检索层显式处理，引用须原文切片直出）；LangGraph 备选时 checkpoint 默认明文存全量对话，须强制 AES + 库权限 + 保留策略；引入执行类工具须自配隔离（库层无沙箱）。</p>
 </div>
 <p><b>否决</b>：OpenClaw / Hermes 多租户隔离不足的个人助手架构，20+ 渠道与工具执行面是多余攻击面（<a href="#sec-4-1">§4.1</a>，OpenClaw 另有 RCE 事件史 <a href="#sec-3-3">§3.3</a>）；dsh preview 状态 + 审计缺口 + 默认日志上传（<a href="#sec-4-1">§4.1–4.2</a>）；Codex 定位错配且默认流量出境；Pi 无权限系统、企业必备件全自建——对本场景"自建"的部分，库层反而更轻。</p>
@@ -558,7 +558,7 @@
 <h2 class="pagebreak" id="sec-6">6 附录：调研方法与信息来源</h2>
 
 <h3 id="sec-6-1">6.1 调研方法</h3>
-<p>五阶段流水线：存在性核实 → 文档级调研卡（7 份统一模板）→ 源码深读（三代表仓库克隆逐文件阅读，<a href="#sec-3">§3</a> 源码引用出自深读笔记 <code>research/*-deep.md</code>，完整文件清单、行号与统计数字见各调研卡）→ 综合写作（只依赖落盘调研产物）→ 引用抽查终检。<b>反幻觉纪律</b>：调研中与任务书预设冲突的结论（如"FastMCP 已捐给 Pydantic"被证伪、Codex 多处流传口径被源码推翻）均以查证证据为准修正——本报告不保留任何未经佐证的论断。</p>
+<p>五阶段流水线：存在性核实 → 文档级调研卡（7 份统一模板）→ 源码深读（三代表仓库克隆逐文件阅读，<a href="#sec-3">§3</a> 源码引用出自深读笔记 <code>research/*-deep.md</code>，完整文件清单、行号与统计数字见各调研卡）→ 综合写作（只依赖落盘调研产物）→ 引用抽查终检。<b>反幻觉纪律</b>：调研中与任务书预设冲突的结论（如"FastMCP 已捐给 Pydantic"被证伪、Codex 多处流传口径被源码推翻）均以查证证据为准修正。</p>
 
 <h3 id="sec-6-2">6.2 "查无实据"核实记录</h3>
 <p>本报告<b>未发生</b>"工具查无此物"的情形。如实标注的"未找到"项：LangGraph OSS 层原生 OTel exporter；OpenClaw checkpoint / time-travel 专门功能与产品内评测框架；Pi 内建长期记忆（官方哲学明示不做）；Pydantic-AI 智谱内置 provider 与 vLLM 官方 provider 页；dsh 独立分布式 trace 视图与产品级评测数据集——替代接入路径与详情见调研卡。</p>
@@ -578,7 +578,7 @@
 
 <p><b>注册表与第三方佐证</b>：npm / PyPI registry API（包名、版本、周下载量核实，2026-11-03）；安全事件佐证——CCB Belgium 公告（ccb.belgium.be，1-click RCE advisory）、SentinelOne / Cisco / Immersive Labs 分析、arXiv:2503.03704（记忆投毒 MINJA）等。完整 URL 清单见随附调研卡 <code>research/*.md</code>。</p>
 
-<p class="small" style="margin-top:18pt;color:#888">报告生成：2026-11-03 ｜ 本报告结论有效期受各项目周级迭代速度约束，重大决策前建议以当日官方仓库复核关键口径。</p>
+<p class="small" style="margin-top:18pt;color:#888">报告生成：2026-11-03</p>
 
 
 
