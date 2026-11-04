@@ -93,10 +93,9 @@
 <p><b>发现三：企业落地的门槛不在许可证与模型接入，而在治理配套。</b>七者许可证均为 MIT/Apache-2.0，国产模型接入均有原生路径；真正普遍缺失的是权限治理与审计的产品化——OpenClaw 官方明示单一信任域，Codex 审批档位不等同企业 RBAC，金融级落地都须在工具之外补齐治理层（五维度评估见 <a href="#sec-4">§4</a>）。</p>
 
 <p><b>七工具总览</b>——30 秒建立整体认知（口径：长期记忆按四态标注见 <a href="#sec-3">§3</a>，MCP/ACP 按角色标注、方向明细见 <a href="#sec-2-2">§2.2</a>）：</p>
-<table>
+<table class="avoid">
 <thead><tr><th style="width:15%">工具</th><th style="width:11%">分层</th><th style="width:14%">状态管理</th><th style="width:13%">长期记忆</th><th style="width:12%">HITL</th><th style="width:13%">沙箱</th><th style="width:13%">MCP</th><th style="width:9%">ACP</th></tr></thead>
-<tr><td><b>LangChain</b></td><td>SDK（较高层框架）</td><td>借 LangGraph Runtime</td><td>借 Store</td><td>interrupt / Command</td><td>自建</td><td>Client</td><td>—</td></tr>
-<tr><td><b>LangGraph</b></td><td>SDK</td><td>Checkpoint</td><td>Store（跨会话）</td><td>interrupt / Command</td><td>自建</td><td>Client</td><td>—</td></tr>
+<tr><td><b>LangChain</b><br><b>LangGraph</b></td><td>SDK</td><td>Checkpoint</td><td>Store（跨会话）</td><td>interrupt / Command</td><td>自建</td><td>Client</td><td>—</td></tr>
 <tr><td><b>Pydantic-AI</b></td><td>SDK</td><td>会话存储</td><td>未实现（配套包不计入）</td><td>Deferred Tools</td><td>自建</td><td>Client（+FastMCP 打包 Server）</td><td>—</td></tr>
 <tr><td><b>dsh</b></td><td>Harness</td><td>事件溯源日志</td><td>未内置（仅 MCP 参考）</td><td>双旋钮审批</td><td>原生三平台（Win 不完整）</td><td>Client</td><td>ACP Server</td></tr>
 <tr><td><b>Codex CLI</b></td><td>Harness</td><td>Rollout JSONL</td><td>已实现、默认关闭</td><td>两轴 + granular</td><td>内核级三平台（最强）</td><td>Client（Server 已移除）</td><td>—</td></tr>
