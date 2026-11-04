@@ -91,8 +91,8 @@ HTML 单文件（内嵌 CSS + SVG；字体微软雅黑/宋体系统自带）→ 
 ```
 "/c/Program Files (x86)/Google/Chrome/Application/chrome.exe" --headless --disable-gpu --no-first-run \
   --user-data-dir="$TEMP/chrome-print-profile" \
-  --print-to-pdf="D:/workspace/question1/report/question1-调研报告.pdf" \
-  "file:///D:/workspace/question1/report/report.html"
+  --print-to-pdf="D:/workspace/agent-tools-survey/report/question1-调研报告.pdf" \
+  "file:///D:/workspace/agent-tools-survey/report/report.html"
 ```
 
 Win10 零新依赖。关系图手写 SVG 内嵌（不依赖 mermaid CDN，离线打印不丢图）。用 Chrome 而非 Edge 的原因：实测 Edge headless 打印会丢失文档内部链接标注，Chrome 正常保留。注意：Chrome 装在本机 `Program Files (x86)`，且必须带独立 `--user-data-dir`（否则打印被转交给正在运行的浏览器实例而静默失败）；重打后核对 `N bytes written` 输出与 PDF 时间戳，勿只看旧文件（2026-11-04 曾因路径写错导致 PDF 静默停留旧版）。
