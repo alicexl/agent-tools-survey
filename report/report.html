@@ -282,7 +282,7 @@
 <h2 class="pagebreak" id="sec-3">3 架构与核心抽象（深析 ×3 + 简述 ×5）</h2>
 
 <p>深读代表：<b>库层 LangGraph</b>、<b>Harness 层 Codex CLI</b>、<b>产品层 OpenClaw</b>。其余五工具简述见 <a href="#sec-3-4">§3.4</a>。能力状态四态：<b>已实现</b>／<b>默认启用</b>／<b>实验性·可选</b>／<b>未实现</b>——已实现不等于默认获得完整体验，两者分开表述。</p>
-<p><b>七维度统一口径</b>（统一定义见随附调研卡）：状态／记忆／工具调用／扩展机制（Plugins·Skills·Subagents·MCP·ACP 五类子概念不视为同类扩展）／HITL／可观测性／部署与许可。表述约定：每个维度按<b>机制 → 证据 → 判断</b>三句式；仅对三个最有区分度的机制深读——LangGraph 的 checkpoint（§3.1①）、Codex 的沙箱与管理员策略（§3.2⑦）、OpenClaw 的信任域与供应链（§3.3⑦及专题）。</p>
+<p><b>七维度统一口径</b>（统一定义见随附调研卡）：状态／记忆／工具调用／扩展机制（Plugins·Skills·Subagents·MCP·ACP 五类子概念不视为同类扩展）／HITL／可观测性／部署与许可。表述约定：每个维度按<b>机制 → 证据 → 判断</b>三句式分行展开；仅对三个最有区分度的机制深读——LangGraph 的 checkpoint（§3.1①）、Codex 的沙箱与管理员策略（§3.2⑦）、OpenClaw 的信任域与供应链（§3.3⑦及专题）。</p>
 
 <h3 id="sec-3-1">3.1 LangGraph（库/SDK 层代表）：图执行 + 持久化 checkpoint</h3>
 
@@ -294,42 +294,42 @@
 </ul>
 
 <h4>② 记忆：✅ 有（短期 + 长期两套）；语义检索需自备 embedding</h4>
-<p><b>机制</b>　短期记忆 = 图状态 channel（<code>Annotated[X, reducer]</code> 使多节点并发写同一字段按规则合并而非互相覆盖）；长期记忆 = 独立 BaseStore 数据库，按命名空间 + 键组织，<code>search()</code> 支持前缀过滤、结构化 filter 与自然语言 query。<b>证据</b>　<code>graph/state.py</code>、<code>langgraph/store/base</code>。<b>判断</b>　两套接口边界清晰；语义检索不是内建的——库给 <code>Embeddings</code> 接口（Postgres 版建 pgvector + HNSW 索引）、embedding 自备。</p>
+<p><b>机制</b>　短期记忆 = 图状态 channel（<code>Annotated[X, reducer]</code> 使多节点并发写同一字段按规则合并而非互相覆盖）；长期记忆 = 独立 BaseStore 数据库，按命名空间 + 键组织，<code>search()</code> 支持前缀过滤、结构化 filter 与自然语言 query。<br><b>证据</b>　<code>graph/state.py</code>、<code>langgraph/store/base</code>。<br><b>判断</b>　两套接口边界清晰；语义检索不是内建的——库给 <code>Embeddings</code> 接口（Postgres 版建 pgvector + HNSW 索引）、embedding 自备。</p>
 
 <h4>③ 工具调用：✅ 有，但校验发生在 langchain-core 层</h4>
-<p><b>机制</b>　LangGraph 消费 <code>BaseTool/ToolCall/BaseMessage</code>，pydantic 校验由 langchain-core 层完成；<code>ToolNode</code> 逐 tool_call 执行，工具可返回 <code>Command</code> 改状态/跳转；结构化输出双策略（模型原生 / 工具模拟）。<b>证据</b>　<code>tool_node.py</code> 的 <code>_filter_validation_errors</code>——LLM 可控参数错误回喂模型自纠、系统注入参数（InjectedState 等）剔除。<b>判断</b>　校验与自纠闭环完整但不在本库；⚠ <code>langchain-mcp-adapters</code> 已停维护、MCP 支持并入主包 <code>langchain[mcp]</code>，选型勿引旧包。</p>
+<p><b>机制</b>　LangGraph 消费 <code>BaseTool/ToolCall/BaseMessage</code>，pydantic 校验由 langchain-core 层完成；<code>ToolNode</code> 逐 tool_call 执行，工具可返回 <code>Command</code> 改状态/跳转；结构化输出双策略（模型原生 / 工具模拟）。<br><b>证据</b>　<code>tool_node.py</code> 的 <code>_filter_validation_errors</code>——LLM 可控参数错误回喂模型自纠、系统注入参数（InjectedState 等）剔除。<br><b>判断</b>　校验与自纠闭环完整但不在本库；⚠ <code>langchain-mcp-adapters</code> 已停维护、MCP 支持并入主包 <code>langchain[mcp]</code>，选型勿引旧包。</p>
 
 <h4>④ 扩展机制：⚠ 只有积木，没有编排器</h4>
-<p><b>机制</b>　编排原语齐备：subgraph（图本身是 Runnable，子图 checkpoint 与父图共用同一 thread 存储）、<code>Send</code> 动态并行（map-reduce）、<code>Command</code> 跳转。<b>证据</b>　<code>types.py</code>；supervisor/swarm 编排器在 monorepo 内<b>未实现</b>（仅测试 fixture 命中）。<b>判断</b>　只有积木、没有编排器——官方路径是独立仓 <code>langgraph-supervisor-py</code> / <code>langgraph-swarm-py</code> + 本库原语；<code>create_react_agent</code> 已标 deprecated，能力上移至 langchain 仓的 <code>create_agent</code>。</p>
+<p><b>机制</b>　编排原语齐备：subgraph（图本身是 Runnable，子图 checkpoint 与父图共用同一 thread 存储）、<code>Send</code> 动态并行（map-reduce）、<code>Command</code> 跳转。<br><b>证据</b>　<code>types.py</code>；supervisor/swarm 编排器在 monorepo 内<b>未实现</b>（仅测试 fixture 命中）。<br><b>判断</b>　只有积木、没有编排器——官方路径是独立仓 <code>langgraph-supervisor-py</code> / <code>langgraph-swarm-py</code> + 本库原语；<code>create_react_agent</code> 已标 deprecated，能力上移至 langchain 仓的 <code>create_agent</code>。</p>
 
 <h4>⑤ HITL：✅ 有，且与崩溃恢复共用一套持久化机制</h4>
-<p><b>机制</b>　<code>interrupt(value)</code>（<a href="https://github.com/langchain-ai/langgraph/blob/3c916d750575b22c464790e9774494d810ccd322/libs/langgraph/langgraph/types.py#L903"><code>types.py</code></a>）抛出中断，被 runner 的 <code>commit()</code> 捕获，把中断点当作未完成写入存进状态——"等待人工"与"进程崩溃"在存储层是同一种东西；<code>Command(resume=...)</code> 时节点从头重放，已答过的审批不重复问；另支持 <code>response_schema</code> 类型化审批表单。<b>证据</b>　<code>types.py</code>、<code>pregel/_runner.py</code>（permalink 见上）。<b>判断</b>　恢复语义统一；坑写进文档——节点重跑意味着 interrupt 前代码会再执行（副作用须幂等），不可用 try/except 包 interrupt。</p>
+<p><b>机制</b>　<code>interrupt(value)</code>（<a href="https://github.com/langchain-ai/langgraph/blob/3c916d750575b22c464790e9774494d810ccd322/libs/langgraph/langgraph/types.py#L903"><code>types.py</code></a>）抛出中断，被 runner 的 <code>commit()</code> 捕获，把中断点当作未完成写入存进状态——"等待人工"与"进程崩溃"在存储层是同一种东西；<code>Command(resume=...)</code> 时节点从头重放，已答过的审批不重复问；另支持 <code>response_schema</code> 类型化审批表单。<br><b>证据</b>　<code>types.py</code>、<code>pregel/_runner.py</code>（permalink 见上）。<br><b>判断</b>　恢复语义统一；坑写进文档——节点重跑意味着 interrupt 前代码会再执行（副作用须幂等），不可用 try/except 包 interrupt。</p>
 
 <h4>⑥ 可观测性：❌ 原生 OTel 未实现，走 callback 体系自建</h4>
-<p><b>机制</b>　观测走 langchain-core callback 体系接自建后端（Langfuse 等有现成集成）；评测集成不内置。<b>证据</b>　OSS 层无原生 OTel exporter——全仓 grep 仅测试文件命中；主包 deps 不含 LangSmith。<b>判断</b>　原生 OTel <b>未实现</b>、如实报告；LangSmith 完全可选，不配置即无外发。</p>
+<p><b>机制</b>　观测走 langchain-core callback 体系接自建后端（Langfuse 等有现成集成）；评测集成不内置。<br><b>证据</b>　OSS 层无原生 OTel exporter——全仓 grep 仅测试文件命中；主包 deps 不含 LangSmith。<br><b>判断</b>　原生 OTel <b>未实现</b>、如实报告；LangSmith 完全可选，不配置即无外发。</p>
 
 <h4>⑦ 部署与许可证：✅ 引擎全 MIT，可完全自托管</h4>
-<p><b>机制</b>　七包全 MIT（逐一核对 pyproject）；生产最小组合 = <code>langgraph + langgraph-checkpoint-postgres</code> + 自写 ASGI 入口；沙箱不内置（库层不直接执行环境操作）。<b>证据</b>　API server 本体在独立包 <code>langgraph-api</code>（<code>langgraph-cli</code> 的 <code>up</code> import 之）。<b>判断</b>　自托管完整；供应链注记——langchain-community 包正在停维护收缩（sunset），依赖只走主线包。</p>
+<p><b>机制</b>　七包全 MIT（逐一核对 pyproject）；生产最小组合 = <code>langgraph + langgraph-checkpoint-postgres</code> + 自写 ASGI 入口；沙箱不内置（库层不直接执行环境操作）。<br><b>证据</b>　API server 本体在独立包 <code>langgraph-api</code>（<code>langgraph-cli</code> 的 <code>up</code> import 之）。<br><b>判断</b>　自托管完整；供应链注记——langchain-community 包正在停维护收缩（sunset），依赖只走主线包。</p>
 
 <h3 id="sec-3-2">3.2 Codex CLI（Runtime/Harness 层代表）：内核级沙箱 + 企业治理面</h3>
 
 <h4>① 状态：✅ 有（rollout 不可变会话 + resume），但无快照式 checkpoint</h4>
-<p><b>机制</b>　会话落盘为 append-only JSONL（真相源）+ SQLite 索引层，fork/回退新开文件、thread_id 稳定；<code>codex resume / fork / queue</code> 入口齐全，非交互 <code>codex exec resume</code> 保留原 transcript、plan history 与 approvals。<b>证据</b>　<code>rollout/src/lib.rs</code>；用户可感知的"回退"是 Esc-Esc backtrack，非 checkpoint 回放。<b>判断</b>　有恢复、无快照——代码里的 "checkpoint" 是压缩检查点而非产品级快照，没有 LangGraph 式 time-travel。</p>
+<p><b>机制</b>　会话落盘为 append-only JSONL（真相源）+ SQLite 索引层，fork/回退新开文件、thread_id 稳定；<code>codex resume / fork / queue</code> 入口齐全，非交互 <code>codex exec resume</code> 保留原 transcript、plan history 与 approvals。<br><b>证据</b>　<code>rollout/src/lib.rs</code>；用户可感知的"回退"是 Esc-Esc backtrack，非 checkpoint 回放。<br><b>判断</b>　有恢复、无快照——代码里的 "checkpoint" 是压缩检查点而非产品级快照，没有 LangGraph 式 time-travel。</p>
 
 <h4>② 记忆：✅ 有（AGENTS.md 双层 + memories 两阶段长期管线）</h4>
-<p><b>机制</b>　项目记忆（AGENTS.md 沿项目根向上收集拼接）与全局记忆（<code>~/.codex/AGENTS.md</code>）双层；长期记忆两阶段管线——后台从闲置 rollout 抽取结构化记忆 → consolidation 合并整编；会话内压缩三路（本地摘要 / 服务端压缩 / token 预算式开新窗）。<b>证据</b>　<code>core/src/agents_md.rs</code>、<code>core/src/memories/</code>（工件存 <code>$CODEX_HOME/memories/</code>）。<b>判断</b>　体系完整，但长期记忆<b>已实现、默认关闭</b>（<code>features.memories</code> 默认 off，需显式开启）。</p>
+<p><b>机制</b>　项目记忆（AGENTS.md 沿项目根向上收集拼接）与全局记忆（<code>~/.codex/AGENTS.md</code>）双层；长期记忆两阶段管线——后台从闲置 rollout 抽取结构化记忆 → consolidation 合并整编；会话内压缩三路（本地摘要 / 服务端压缩 / token 预算式开新窗）。<br><b>证据</b>　<code>core/src/agents_md.rs</code>、<code>core/src/memories/</code>（工件存 <code>$CODEX_HOME/memories/</code>）。<br><b>判断</b>　体系完整，但长期记忆<b>已实现、默认关闭</b>（<code>features.memories</code> 默认 off，需显式开启）。</p>
 
 <h4>③ 工具调用：✅ 有（统一 ToolSpec + 两级结构化输出 + MCP 双向）</h4>
-<p><b>机制</b>　统一类型 ToolSpec 四型：Function / Namespace（打包省 token）/ ToolSearch（按需加载）/ Freeform——apply_patch 用约束文法让模型直出补丁文本而非 JSON；结构化输出两级（工具结果 output_schema + 回合最终 json_schema(strict)）；MCP 走 stdio + streamable-HTTP 双 transport、白黑名单、per-server 审批。<b>证据</b>　<code>tools/src/tool_spec.rs</code>；校验失败不打断回合——错误分可自纠（回喂重试）与致命（终止）两类。<b>判断</b>　MCP 为纯 Client 侧接入——曾提供的 MCP Server 模式已于 2026-09 由官方文档确认移除；内置 shell 为可续写伪终端，输出含退出码与耗时。</p>
+<p><b>机制</b>　统一类型 ToolSpec 四型：Function / Namespace（打包省 token）/ ToolSearch（按需加载）/ Freeform——apply_patch 用约束文法让模型直出补丁文本而非 JSON；结构化输出两级（工具结果 output_schema + 回合最终 json_schema(strict)）；MCP 走 stdio + streamable-HTTP 双 transport、白黑名单、per-server 审批。<br><b>证据</b>　<code>tools/src/tool_spec.rs</code>；校验失败不打断回合——错误分可自纠（回喂重试）与致命（终止）两类。<br><b>判断</b>　MCP 为纯 Client 侧接入——曾提供的 MCP Server 模式已于 2026-09 由官方文档确认移除；内置 shell 为可续写伪终端，输出含退出码与耗时。</p>
 
 <h4>④ 扩展机制：✅ 有（Skills/Plugins/Hooks/MCP 四通道 + 原生多 agent）</h4>
-<p><b>机制</b>　四通道：Skills（<code>$CODEX_HOME/skills/</code>，显式 mention 与隐式识别）、Plugins（marketplace：npm 源 / bundle / 远程目录）、Hooks（14 个生命周期事件，可改写命令）、MCP；多 agent 工具组原生（spawn/manage 子代理 + message-board，深度硬上限）。<b>证据</b>　<code>hooks/src/lib.rs</code>；旧 <code>~/.codex/prompts</code> 自定义斜杠命令已被 skills 取代。<b>判断</b>　扩展面收敛清晰、受控——官方明示子代理"只在显式要求时才 spawn，token 消耗高于单代理"；<code>codex exec --json</code> 每行一事件的 stdout 契约使其可作 CI/管道编排单元。</p>
+<p><b>机制</b>　四通道：Skills（<code>$CODEX_HOME/skills/</code>，显式 mention 与隐式识别）、Plugins（marketplace：npm 源 / bundle / 远程目录）、Hooks（14 个生命周期事件，可改写命令）、MCP；多 agent 工具组原生（spawn/manage 子代理 + message-board，深度硬上限）。<br><b>证据</b>　<code>hooks/src/lib.rs</code>；旧 <code>~/.codex/prompts</code> 自定义斜杠命令已被 skills 取代。<br><b>判断</b>　扩展面收敛清晰、受控——官方明示子代理"只在显式要求时才 spawn，token 消耗高于单代理"；<code>codex exec --json</code> 每行一事件的 stdout 契约使其可作 CI/管道编排单元。</p>
 
 <h4>⑤ HITL：✅ 有（sandbox × approval 两轴正交）</h4>
-<p><b>机制</b>　sandbox 决定"命令能干什么"，approval 决定"越界时问不问"——两轴正交；审批档 UnlessTrusted / OnRequest（默认）/ Granular（实验，五开关逐类）/ Never。<b>证据</b>　<code>protocol/src/protocol.rs</code>；沙箱内被拒后可询问"脱沙箱重试"，但 Never / OnRequest 档下不重试，且策略禁止读的文件同样禁止脱沙箱重试——否则等于悄悄放行。 <b>判断</b>　设计正交、逃逸口管理严谨；exec 无界面模式默认 never，<code>--dangerously-bypass-approvals-and-sandbox</code> 与显式审批参数冲突会报错。</p>
+<p><b>机制</b>　sandbox 决定"命令能干什么"，approval 决定"越界时问不问"——两轴正交；审批档 UnlessTrusted / OnRequest（默认）/ Granular（实验，五开关逐类）/ Never。<br><b>证据</b>　<code>protocol/src/protocol.rs</code>；沙箱内被拒后可询问"脱沙箱重试"，但 Never / OnRequest 档下不重试，且策略禁止读的文件同样禁止脱沙箱重试——否则等于悄悄放行。<br><b>判断</b>　设计正交、逃逸口管理严谨；exec 无界面模式默认 never，<code>--dangerously-bypass-approvals-and-sandbox</code> 与显式审批参数冲突会报错。</p>
 
 <h4>⑥ 可观测性：✅ 有（OTel 三信号，隐私默认关）</h4>
-<p><b>机制</b>　OTel 三信号可导出（None / Statsig / OtlpGrpc / OtlpHttp）；会话日志三层（rollout JSONL + 文件日志 + SQLite logs 库）；analytics 独立通道默认 POST 到 ChatGPT 后端、<code>[analytics] enabled=false</code> 一键关。 <b>证据</b>　<code>otel/src/config.rs</code>；指标含 <code>codex.turn_ttft</code> / <code>codex.turn_cost_microusd</code> 等。<b>判断</b>　隐私姿态保守——<code>log_user_prompt</code> / <code>log_agent_responses</code> 默认 false；rollout-trace 为本地调试 bundle，官方明示 "not telemetry… does not upload"。</p>
+<p><b>机制</b>　OTel 三信号可导出（None / Statsig / OtlpGrpc / OtlpHttp）；会话日志三层（rollout JSONL + 文件日志 + SQLite logs 库）；analytics 独立通道默认 POST 到 ChatGPT 后端、<code>[analytics] enabled=false</code> 一键关。<br><b>证据</b>　<code>otel/src/config.rs</code>；指标含 <code>codex.turn_ttft</code> / <code>codex.turn_cost_microusd</code> 等。<br><b>判断</b>　隐私姿态保守——<code>log_user_prompt</code> / <code>log_agent_responses</code> 默认 false；rollout-trace 为本地调试 bundle，官方明示 "not telemetry… does not upload"。</p>
 
 <h4>⑦ 部署与许可证：✅ 有（三平台内核级沙箱 + requirements.toml 企业治理，同类独有）</h4>
 <p><b>判断：有。</b>macOS Seatbelt / Linux bubblewrap+seccomp / Windows 三后端；Windows 默认 Disabled 时 workspace-write 自动降级 read-only——宁可降级不裸奔；<code>requirements.toml</code> 管理员强制、用户不可削弱。</p>
@@ -342,22 +342,22 @@
 <h3 id="sec-3-3">3.3 OpenClaw（成品/产品层代表）：Gateway 控制平面 + 全插件化 + 供应链防御标杆</h3>
 
 <h4>① 状态：✅ 有（每 agent 一个 SQLite + 重启恢复三套检测）；time-travel 未实现</h4>
-<p><b>机制</b>　每 agent 一个独立 SQLite 库（可换 Postgres），会话记录表只追加 + 序号、配全文检索与向量列；重启恢复三套检测（每轮调模型前先落盘、关机留标记、启动扫孤儿会话）、每会话 3 次恢复预算、crash-loop 熔断。<b>证据</b>　<code>openclaw-agent-storage-schema.ts</code>；明文准则"重启后不重问已批过的授权"。<b>判断</b>　工程化扎实；checkpoint / time-travel <b>未实现</b>——最接近的是保留全部会话记录 + 上下文压缩 + 子代理分叉。</p>
+<p><b>机制</b>　每 agent 一个独立 SQLite 库（可换 Postgres），会话记录表只追加 + 序号、配全文检索与向量列；重启恢复三套检测（每轮调模型前先落盘、关机留标记、启动扫孤儿会话）、每会话 3 次恢复预算、crash-loop 熔断。<br><b>证据</b>　<code>openclaw-agent-storage-schema.ts</code>；明文准则"重启后不重问已批过的授权"。<br><b>判断</b>　工程化扎实；checkpoint / time-travel <b>未实现</b>——最接近的是保留全部会话记录 + 上下文压缩 + 子代理分叉。</p>
 
 <h4>② 记忆：✅ 有（五层体系 + 溯源防投毒 + 混合检索）</h4>
-<p><b>机制</b>　五层体系：Instructions（AGENTS.md）→ Curated core（MEMORY.md/USER.md，"做梦"巩固）→ Episodic（日记，只按需召回、永不自动进入对话）→ Prospective（长期意图，时间型编译成 cron）→ Review（DREAMS.md 永不进入对话）；每条记忆带来源标记（本人/agent/不可信/系统，默认按不可信处理），定时任务与子代理产物不能晋升为长期记忆；BM25 + 向量混合检索（中文 CJK 三元组分词），召回双通道（开机按重要性×时间衰减注入 + Active Memory 子代理翻记忆）。<b>证据</b>　<code>memory_index_chunks + memory_embedding_cache</code> 双表；对照 OWASP ASI06 与 MINJA 建模。<b>判断</b>　写路径即安全边界——网络内容标不可信，防投毒是设计目标而非附注。</p>
+<p><b>机制</b>　五层体系：Instructions（AGENTS.md）→ Curated core（MEMORY.md/USER.md，"做梦"巩固）→ Episodic（日记，只按需召回、永不自动进入对话）→ Prospective（长期意图，时间型编译成 cron）→ Review（DREAMS.md 永不进入对话）；每条记忆带来源标记（本人/agent/不可信/系统，默认按不可信处理），定时任务与子代理产物不能晋升为长期记忆；BM25 + 向量混合检索（中文 CJK 三元组分词），召回双通道（开机按重要性×时间衰减注入 + Active Memory 子代理翻记忆）。<br><b>证据</b>　<code>memory_index_chunks + memory_embedding_cache</code> 双表；对照 OWASP ASI06 与 MINJA 建模。<br><b>判断</b>　写路径即安全边界——网络内容标不可信，防投毒是设计目标而非附注。</p>
 
 <h4>③ 工具调用：✅ 有（五档 exec 策略 + 多层准入 + MCP 双向）</h4>
-<p><b>机制</b>　shell 执行独立五档策略（deny / allowlist / ask / auto / full，auto = 模型预审→人工兜底，策略钩子 fail-closed、15s 超时变拒绝）；工具准入多层叠加——agent / global / default 三源合并（deny wins）+ 按 provider、按发送者 + 部署方具名 allowlist，MCP 工具再过 sandbox.tools 一道门；MCP 双向（客户端 + 自身暴露成 server + relay 反向中继）。<b>证据</b>　<code>zod-schema.agent-runtime.ts</code>；子代理硬禁名单（<code>agent-tools.policy.ts</code>：叶子子代理禁 sessions_spawn / gateway 级工具、禁直接对用户发消息）；<code>api.registerTool</code> TypeBox 运行时校验 + 模型坏输出修复层。<b>判断</b>　防线多层，且子代理权限收敛比主 agent 更严。</p>
+<p><b>机制</b>　shell 执行独立五档策略（deny / allowlist / ask / auto / full，auto = 模型预审→人工兜底，策略钩子 fail-closed、15s 超时变拒绝）；工具准入多层叠加——agent / global / default 三源合并（deny wins）+ 按 provider、按发送者 + 部署方具名 allowlist，MCP 工具再过 sandbox.tools 一道门；MCP 双向（客户端 + 自身暴露成 server + relay 反向中继）。<br><b>证据</b>　<code>zod-schema.agent-runtime.ts</code>；子代理硬禁名单（<code>agent-tools.policy.ts</code>：叶子子代理禁 sessions_spawn / gateway 级工具、禁直接对用户发消息）；<code>api.registerTool</code> TypeBox 运行时校验 + 模型坏输出修复层。<br><b>判断</b>　防线多层，且子代理权限收敛比主 agent 更严。</p>
 
 <h4>④ 扩展机制：✅ 有（harness 是一级插件契约，产品层可整层复用 harness 层）</h4>
-<p><b>机制</b>　180+ 个插件 + 约 50 个注册面（manifest 惰性激活 + contracts.tools 契约）；40+ 事件钩子的注入风险 / 超时行为 / 出错放行还是拒绝写进 <code>PLUGIN_HOOK_METADATA</code>；harness 是一级插件契约——外部引擎接入需实现四个接口（跑一轮 / 压缩 / 分叉会话 / 认证指纹）。<b>证据</b>　<a href="https://github.com/openclaw/openclaw/blob/4285c6ce/src/agents/harness/types.ts#L620-L770"><code>src/agents/harness/types.ts</code></a>；注册表硬规则：id "openclaw" 保留给内置运行时。<b>判断</b>　产品层可整层复用 harness 层：现有 harness 按集成方式分两类——原生插件（内置 openclaw[旧名 pi，与 Pi 项目无涉] + <b>codex app-server（精确 pin <code>@openai/codex: 0.164.0</code>，nativeCompaction 独占）</b> + copilot 等）、外部 ACP 接入（acpx 启动 Claude Code / Gemini CLI 等，Pi 亦经此路径）；子代理 sessions_spawn 隔离分叉，嵌套深度上限 1-5、越深可用工具越少。</p>
+<p><b>机制</b>　180+ 个插件 + 约 50 个注册面（manifest 惰性激活 + contracts.tools 契约）；40+ 事件钩子的注入风险 / 超时行为 / 出错放行还是拒绝写进 <code>PLUGIN_HOOK_METADATA</code>；harness 是一级插件契约——外部引擎接入需实现四个接口（跑一轮 / 压缩 / 分叉会话 / 认证指纹）。<br><b>证据</b>　<a href="https://github.com/openclaw/openclaw/blob/4285c6ce/src/agents/harness/types.ts#L620-L770"><code>src/agents/harness/types.ts</code></a>；注册表硬规则：id "openclaw" 保留给内置运行时。<br><b>判断</b>　产品层可整层复用 harness 层：现有 harness 按集成方式分两类——原生插件（内置 openclaw[旧名 pi，与 Pi 项目无涉] + <b>codex app-server（精确 pin <code>@openai/codex: 0.164.0</code>，nativeCompaction 独占）</b> + copilot 等）、外部 ACP 接入（acpx 启动 Claude Code / Gemini CLI 等，Pi 亦经此路径）；子代理 sessions_spawn 隔离分叉，嵌套深度上限 1-5、越深可用工具越少。</p>
 
 <h4>⑤ HITL：✅ 有（审批在聊天渠道内以按钮卡呈现，等待期计时暂停）</h4>
-<p><b>机制</b>　两阶段审批（<code>before_tool_call</code> 返回 requireApproval → 网关注册并等待）；审批交互发生在用户所在聊天渠道内的按钮卡上，无按钮渠道回退 <code>/approve</code> 命令（非授权 sender 拒绝）；等待审批期间 run 计时暂停。<b>证据</b>　拒绝的终局语义直接写给模型——"This denial is final… Do not run the tool call again"（<code>agent-tools.before-tool-call.approval.ts</code>）。<b>判断</b>　渠道内审批体验完整；运行中可直接塞入新指令（steering），提权 exec 是全局明示的逃逸口（tools.elevated 双门）。</p>
+<p><b>机制</b>　两阶段审批（<code>before_tool_call</code> 返回 requireApproval → 网关注册并等待）；审批交互发生在用户所在聊天渠道内的按钮卡上，无按钮渠道回退 <code>/approve</code> 命令（非授权 sender 拒绝）；等待审批期间 run 计时暂停。<br><b>证据</b>　拒绝的终局语义直接写给模型——"This denial is final… Do not run the tool call again"（<code>agent-tools.before-tool-call.approval.ts</code>）。<br><b>判断</b>　渠道内审批体验完整；运行中可直接塞入新指令（steering），提权 exec 是全局明示的逃逸口（tools.elevated 双门）。</p>
 
 <h4>⑥ 可观测性：✅ 有（单一诊断漏斗双导出器，隐私默认收敛）</h4>
-<p><b>机制</b>　单一诊断事件漏斗接两个导出器（OTel 三信号 + Prometheus 30+ <code>openclaw_*</code> 指标，必须走 Gateway 认证）；Gateway 同端口 Dashboard（审批卡 / 日志 / 会话）。<b>证据</b>　diagnostics-otel 对 provider 调用打 W3C traceparent 标记防伪造调用链。<b>判断</b>　隐私默认收敛——原始 prompt / 回复 / 工具 IO 一律不导出（要导出须逐项显式开且导出前仍脱敏），日志脱敏恒开、不可配置关闭。</p>
+<p><b>机制</b>　单一诊断事件漏斗接两个导出器（OTel 三信号 + Prometheus 30+ <code>openclaw_*</code> 指标，必须走 Gateway 认证）；Gateway 同端口 Dashboard（审批卡 / 日志 / 会话）。<br><b>证据</b>　diagnostics-otel 对 provider 调用打 W3C traceparent 标记防伪造调用链。<br><b>判断</b>　隐私默认收敛——原始 prompt / 回复 / 工具 IO 一律不导出（要导出须逐项显式开且导出前仍脱敏），日志脱敏恒开、不可配置关闭。</p>
 
 <h4>⑦ 部署与许可证：✅ 有（完全自托管）；⚠ 沙箱默认关闭</h4>
 <p><b>判断：有，但沙箱要显式开。</b>无付费层 / 无托管服务 / 无 token；容器沙箱体系完整但<b>默认关闭</b>（"Tools run on the host unless you configure sandboxing"）——个人助理默认姿态，企业须显式加固；一个 Gateway = 一个信任域（SECURITY.md）。</p>
