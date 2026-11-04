@@ -223,7 +223,7 @@
 
   <!-- 协议总线 -->
   <rect x="50" y="424" width="620" height="46" rx="8" fill="#fff8ec" stroke="#b0531f" stroke-width="1" stroke-dasharray="6,3"/>
-  <text x="360" y="451" font-size="13" font-weight="700" fill="#b0531f" text-anchor="middle">协议互通总线：MCP 全员接入 · ACP 三家（方向明细见下表）</text>
+  <text x="360" y="451" font-size="13" font-weight="700" fill="#b0531f" text-anchor="middle">各项目均具备 MCP Client 接入实现，Server/ACP 角色不同（明细见下表）</text>
 
   <!-- 总线下挂 -->
   <line x1="150" y1="470" x2="150" y2="494" stroke="#b0531f" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#aOrange)"/>
@@ -490,7 +490,7 @@
 <div class="box good">
 <p class="bt">推荐：Pydantic-AI（首选）或 LangChain/LangGraph：库层自建 RAG 问答 + 内网模型端点</p>
 <p><b>理由</b>：合规问答是<b>确定性工作流 + 检索</b>，不需要自主执行 shell/文件的 agent 能力——工具执行面就是攻击面，本场景应<b>最小化工具集</b>（只读检索工具）——库层甜区：行为可控、每步可审计、对话数据落哪家库带哪个租户列全由企业自定（Pydantic-AI 依赖面最小、SBOM 审计友好，结构化输出 <code>output_type</code> 强制引用字段 schema、校验失败自动回喂）。若流程含多步审批（答案需合规官复核后发布），LangGraph 的 interrupt() / Command(resume) 持久化审批语义现成。</p>
-<p><b>主要风险</b>：检索质量是答案质量的天花板（合规文档多口径表述需检索层显式处理，引用须原文切片直出）；LangGraph 备选时 checkpoint 默认明文存全量对话，须强制 AES + 库权限 + 保留策略；引入执行类工具须自配隔离（库层无沙箱）。</p>
+<p><b>主要风险</b>：检索质量是答案质量的天花板（合规文档多口径表述需检索层显式处理）；LangGraph 备选时 checkpoint 默认明文存全量对话，须强制 AES + 库权限 + 保留策略；引入执行类工具须自配隔离（库层无沙箱）。</p>
 </div>
 <p><b>否决</b>：OpenClaw / Hermes 多租户隔离不足的个人助手架构，20+ 渠道与工具执行面是多余攻击面（<a href="#sec-4-1">§4.1</a>，OpenClaw 另有 RCE 事件史 <a href="#sec-3-3">§3.3</a>）；dsh preview 状态 + 审计缺口 + 默认日志上传（<a href="#sec-4-1">§4.1–4.2</a>）；Codex 定位错配且默认流量出境；Pi 无权限系统、企业必备件全自建——对本场景"自建"的部分，库层反而更轻。</p>
 
@@ -555,27 +555,34 @@
 <h2 class="pagebreak" id="sec-6">6 附录：调研方法与信息来源</h2>
 
 <h3 id="sec-6-1">6.1 调研方法</h3>
-<p>五阶段流水线：存在性核实 → 文档级调研卡（7 份统一模板）→ 源码深读（三代表仓库克隆逐文件阅读，<a href="#sec-3">§3</a> 源码引用出自深读笔记 <code>research/*-deep.md</code>，完整文件清单、行号与统计数字见各调研卡）→ 综合写作（只依赖落盘调研产物）→ 引用抽查终检。<b>反幻觉纪律</b>：调研中与任务书预设冲突的结论（如"FastMCP 已捐给 Pydantic"被证伪、Codex 多处流传口径被源码推翻）均以查证证据为准修正。</p>
+<p>五阶段流水线：存在性核实 → 文档级调研卡 → 源码深读（三代表仓库克隆逐文件阅读，<a href="#sec-3">§3</a> 源码引用出自深读笔记 <code>research/*-deep.md</code>，完整文件清单、行号与统计数字见各调研卡）→ 综合写作 → 引用抽查终检。<b>反幻觉纪律</b>：调研中与任务书预设冲突的结论（如"FastMCP 已捐给 Pydantic"被证伪、Codex 多处流传口径被源码推翻）均以查证证据为准修正。</p>
 
 <h3 id="sec-6-2">6.2 "查无实据"核实记录</h3>
-<p>本报告<b>未发生</b>"工具查无此物"的情形。如实标注的"未找到"项：LangGraph OSS 层原生 OTel exporter；OpenClaw checkpoint / time-travel 专门功能与产品内评测框架；Pi 内建长期记忆（官方哲学明示不做）；Pydantic-AI 智谱内置 provider 与 vLLM 官方 provider 页；dsh 独立分布式 trace 视图与产品级评测数据集——替代接入路径与详情见调研卡。</p>
+<p>本报告<b>未发生</b>"工具查无此物"的情形。如实标注的"未找到"项：LangGraph OSS 层原生 OTel exporter；OpenClaw checkpoint / time-travel 专门功能与产品内评测框架；Pi 内建长期记忆；Pydantic-AI 智谱内置 provider 与 vLLM 官方 provider 页；dsh 独立分布式 trace 视图与产品级评测数据集——详情见调研卡。</p>
 
 <h3 id="sec-6-3">6.3 信息源与版本锚定</h3>
 
-<p><b>源码引用基准</b>——正文源码路径均相对下表仓库根，关键论断挂源码永久链接（permalink）：</p>
+<p><b>源码深读工具（固定 commit SHA）</b>——正文源码路径均相对下表仓库根，关键论断挂源码永久链接（permalink）：</p>
 <table class="avoid">
-<thead><tr><th style="width:16%">项目</th><th style="width:26%">引用基准</th><th style="width:38%">永久链接</th><th style="width:20%">访问日期</th></tr></thead>
+<thead><tr><th style="width:16%">项目</th><th style="width:26%">锚定 commit</th><th style="width:38%">永久链接</th><th style="width:20%">访问日期</th></tr></thead>
 <tr><td><b>LangGraph</b></td><td>main 分支 commit <code>3c916d7</code>（v1.2.19 后数个提交）</td><td class="src"><a href="https://github.com/langchain-ai/langgraph/tree/3c916d750575b22c464790e9774494d810ccd322">github.com/langchain-ai/langgraph/tree/3c916d7</a></td><td>2026-11-03</td></tr>
 <tr><td><b>Codex CLI</b></td><td>main 分支 commit <code>bfdbf01</code></td><td class="src"><a href="https://github.com/openai/codex/tree/bfdbf01">github.com/openai/codex/tree/bfdbf01</a></td><td>2026-11-03</td></tr>
 <tr><td><b>OpenClaw</b></td><td>main 分支 commit <code>4285c6ce</code>（CalVer 2026.10.10 线）</td><td class="src"><a href="https://github.com/openclaw/openclaw/tree/4285c6ce">github.com/openclaw/openclaw/tree/4285c6ce</a></td><td>2026-11-03</td></tr>
-<tr><td><b>dsh / Hermes</b></td><td>当日 master / main 快照（调研卡存档路径）</td><td class="src"><a href="https://github.com/deepseek-ai/deepseek-harness">github.com/deepseek-ai/deepseek-harness</a> ｜ <a href="https://github.com/NousResearch/hermes-agent">github.com/NousResearch/hermes-agent</a></td><td>2026-11-03</td></tr>
 </table>
 
-<p><b>官方文档核心页面</b>（正文论断的主要文档出处，访问日期同上；其余出处见调研卡）：LangChain/LangGraph <a class="src" href="https://docs.langchain.com/oss/python/langgraph/persistence">langgraph/persistence</a>（checkpoint 体系）｜ Pydantic-AI <a class="src" href="https://ai.pydantic.dev/">ai.pydantic.dev</a> ｜ dsh <a class="src" href="https://github.com/deepseek-ai/deepseek-harness/tree/master/docs/subsystems">docs/subsystems</a>（session/sandbox/approval/tools）｜ Codex CLI <a class="src" href="https://developers.openai.com/codex/config-reference">config-reference</a>（配置全表）｜ Pi <a class="src" href="https://pi.dev/docs/latest/extensions">extensions</a>（扩展体系）｜ OpenClaw <a class="src" href="https://docs.openclaw.ai/concepts/memory-architecture">memory-architecture</a>（记忆体系）｜ Hermes-Agent <a class="src" href="https://hermes-agent.nousresearch.com/docs/user-guide/security">user-guide/security</a>（审批与黑名单）。</p>
+<p><b>文档调研工具（固定 release + 核心官方文档页）</b>——论断出处，访问日期同上：</p>
+<table class="avoid">
+<thead><tr><th style="width:15%">项目</th><th style="width:24%">锚定版本</th><th style="width:61%">核心官方文档页</th></tr></thead>
+<tr><td><b>LangChain</b></td><td>langchain 1.4.8 · langchain-core 1.7.4</td><td class="src"><a href="https://docs.langchain.com/oss/python/langchain/overview">langchain/overview</a>（官方分层表述）｜ <a href="https://docs.langchain.com/oss/python/langchain/structured-output">structured-output</a>（结构化输出双策略）｜ <a href="https://docs.langchain.com/oss/python/langchain/multi-agent">multi-agent</a>（五模式）</td></tr>
+<tr><td><b>Pydantic-AI</b></td><td>v2.65.0</td><td class="src"><a href="https://ai.pydantic.dev/api/output/">api/output</a>（结构化输出）｜ <a href="https://ai.pydantic.dev/deferred-tools/">deferred-tools</a>（审批）｜ <a href="https://ai.pydantic.dev/mcp/client/">mcp/client</a>（MCP）</td></tr>
+<tr><td><b>dsh</b></td><td>dsh-v0.2.2-alpha.3</td><td class="src"><a href="https://github.com/deepseek-ai/deepseek-harness/tree/master/docs/subsystems">docs/subsystems</a>（session / sandbox / approval / tools）</td></tr>
+<tr><td><b>Pi</b></td><td>v1.5.0</td><td class="src"><a href="https://pi.dev/docs/latest/extensions">extensions</a>（扩展体系）｜ <a href="https://pi.dev/docs/latest/sessions">sessions</a>（会话树）</td></tr>
+<tr><td><b>Hermes-Agent</b></td><td>v0.22.6</td><td class="src"><a href="https://hermes-agent.nousresearch.com/docs/user-guide/security">user-guide/security</a>（审批与黑名单）｜ <a href="https://hermes-agent.nousresearch.com/docs/integrations/providers">integrations/providers</a>（模型接入）</td></tr>
+</table>
 
-<p><b>注册表与第三方佐证</b>：npm / PyPI registry API（包名、版本、周下载量核实，2026-11-03）；安全事件佐证——CCB Belgium 公告（ccb.belgium.be，1-click RCE advisory）、SentinelOne / Cisco / Immersive Labs 分析、arXiv:2503.03704（记忆投毒 MINJA）等。完整 URL 清单见随附调研卡 <code>research/*.md</code>。</p>
+<p><b>注册表与第三方佐证</b>：npm / PyPI registry API（2026-11-03）；安全事件佐证——CCB Belgium 公告（ccb.belgium.be，1-click RCE advisory）、SentinelOne / Cisco / Immersive Labs 分析、arXiv:2503.03704（记忆投毒 MINJA）等。完整 URL 清单见随附调研卡 <code>research/*.md</code>。</p>
 
-<p class="small" style="margin-top:18pt;color:#888">报告生成：2026-11-03</p>
+<p class="small" style="margin-top:6pt;color:#888">报告生成：2026-11-03</p>
 
 
 
