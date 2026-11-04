@@ -2,7 +2,7 @@
 
 - **深读时点**：2026-11-03
 - **commit**：`bfdbf01`（main 分支，`git log -1` = "Move agent message board host integration to app-server (#59162)"，2026-11-03 13:38 UTC）
-- **仓库**：`D:\workspace\question1\repos\codex\`（浅 clone，无 tag）
+- **仓库**：`D:\workspace\agent-tools-survey\repos\codex\`（浅 clone，无 tag）
 - ⚠️ **版本口径重要提示**：任务假设源码在 "rust-v0.166.0 附近"，但实际 clone 的是**当日 main 头部**，已远超 v0.166.0。本笔记以实际源码为准；凡与 v0.166.0 时代常识不同处（如 `wire_api="chat"` 已删除、`on-failure` 档位已并入 `on-request`、`~/.codex/prompts` 自定义斜杠命令已被 skills 取代、插件系统已存在），均特别标注"**较 0.166 演化**"。报告中引用时须注明"main@bfdbf01 口径"。
 - **规模**：workspace 成员 crate **166 个**（`codex-rs/Cargo.toml` members 计数）；`.rs` 文件 5,769 个、约 **225 万行** Rust（`find . -name '*.rs' | wc -l` / 累计 `wc -l`）。workspace 版本号统一为 `0.0.0`（发版由 CI 注入），`codex-rs/Cargo.toml: [workspace.package] version = "0.0.0"`。
 - 许可证：**Apache-2.0**（仓库根 `LICENSE`；`codex-rs/Cargo.toml:179 license = "Apache-2.0"`）。

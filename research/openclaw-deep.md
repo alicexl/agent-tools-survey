@@ -2,7 +2,7 @@
 
 - 深读时点：2026-11-03
 - commit：`4285c6ce`（2026-11-03 11:11:34 -0300, "improve(ui): rebuild the channel setup dialog on one dialog layout (#191385)"）
-- 仓库：`D:\workspace\question1\repos\openclaw`（浅 clone），pnpm monorepo，包版本 `2026.10.10`（CalVer）
+- 仓库：`D:\workspace\agent-tools-survey\repos\openclaw`（浅 clone），pnpm monorepo，包版本 `2026.10.10`（CalVer）
 - 定位（`package.json` description）："Multi-channel AI gateway with extensible messaging integrations"；README.md："an open-source AI assistant that runs on your own computer and meets you in the channels you already use"；产品演化史 Warelay → Clawdbot → Moltbot → OpenClaw（`VISION.md`）
 - 架构主张（README.md）："The architecture case — trusted gateway, untrusted execution, policy enforced by code"。Gateway 是本地控制平面（sessions/tools/events/channels），Control UI/CLI/TUI 都是它的客户端；模型与 agent harness 全部插件化（"Models and agent harnesses (Claude, Codex, local models) are plugins you can swap without changing anything else"）
 

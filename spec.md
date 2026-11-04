@@ -2,7 +2,7 @@
 
 - 立项日期：2026-11-03
 - 状态：已完成
-- 题目源：`question1/question.txt`
+- 题目源：`question.txt`
 
 ## 1. 目标与交付物
 

@@ -2,7 +2,7 @@
 
 - 深读时点：2026-11-03
 - commit：`3c916d7`（3c916d750575b22c464790e9774494d810ccd322，2026-11-03 01:03 UTC，`feat(sdk-py): remove fairness_weight from PrioritySettings (#9441)`）
-- 源码位置：`D:\workspace\question1\repos\langgraph\`（浅 clone monorepo）
+- 源码位置：`D:\workspace\agent-tools-survey\repos\langgraph\`（浅 clone monorepo）
 - monorepo 布局：`libs/langgraph`（主包 v1.2.19）、`libs/checkpoint`（langgraph-checkpoint，含 store）、`libs/checkpoint-postgres`、`libs/checkpoint-sqlite`、`libs/checkpoint-conformance`（saver 一致性测试套件）、`libs/prebuilt`（langgraph-prebuilt）、`libs/sdk-py`（langgraph-sdk）、`libs/sdk-js`、`libs/cli`（langgraph-cli）
 - 本文所有路径相对仓库根；行号以该 commit 为准。
 
