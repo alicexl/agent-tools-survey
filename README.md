@@ -4,10 +4,13 @@
 
 对 7 个 Agent 开发工具做分层定位与选型调研：LangChain/LangGraph、Pydantic-AI、OpenClaw、Nous Hermes-Agent、DeepSeek Harness（dsh）、开源版 Codex、Pi。题目源见 `question.txt`（含题目 2，题目 2 交付在 [alicexl/prospectus-qa](https://github.com/alicexl/prospectus-qa)）。
 
-## 交付物
+## 交付物（最终提交 = PDF + HTML，报告自包含，引用均可由正文链接与 §6.3 版本锚定回溯）
 
 - **`report/question1-调研报告.pdf`** — 调研报告定稿（21 页，2026-11-05）
 - `report/report.html` — 报告源文件（单文件，内嵌 CSS + SVG）
+
+## 过程产物（仅仓库存档，不随报告提交）
+
 - `research/` — 10 份调研卡（7 工具文档级调研 + LangGraph/Codex/OpenClaw 三深读笔记），报告论断的证据链
 - `spec.md` — 立项规格（调研方法、分层假设、深读代表选择）
 

@@ -126,7 +126,7 @@
 <tr><td><b>Pi</b></td><td class="src">earendil-works/pi</td><td>✅ 存在</td><td>v1.5.0（11-02）</td><td>MIT</td></tr>
 </table>
 
-<p><b>口径声明：</b>三个深读代表使用当日（2026-11-03）main 分支并锚定 commit：LangGraph <code>3c916d7</code>、Codex CLI <code>bfdbf01</code>、OpenClaw <code>4285c6ce</code>。正文源码引用给出相对仓库根的文件路径，行号与完整清单见随附调研卡；关键论断处挂源码永久链接（permalink），全部版本锚定与永久链接见 <a href="#sec-6-3">§6.3</a>。</p>
+<p><b>口径声明：</b>三个深读代表使用当日（2026-11-03）main 分支并锚定 commit：LangGraph <code>3c916d7</code>、Codex CLI <code>bfdbf01</code>、OpenClaw <code>4285c6ce</code>。正文源码引用给出相对仓库根的文件路径，关键论断处挂源码永久链接（permalink），全部版本锚定与永久链接见 <a href="#sec-6-3">§6.3</a>。</p>
 
 <h2 id="sec-2" class="pagebreak">2 分层定位与关系图</h2>
 
@@ -286,7 +286,7 @@
 <h2 class="pagebreak" id="sec-3">3 架构与核心抽象（深析 ×3 + 简述 ×5）</h2>
 
 <p>深读代表：<b>库层 LangGraph</b>、<b>Harness 层 Codex CLI</b>、<b>产品层 OpenClaw</b>。其余五工具简述见 <a href="#sec-3-4">§3.4</a>。能力状态四态：<b>已实现</b>／<b>默认启用</b>／<b>实验性·可选</b>／<b>未实现</b>——已实现不等于默认获得完整体验，两者分开表述。</p>
-<p><b>七维度统一口径</b>（统一定义见随附调研卡）：状态／记忆／工具调用／扩展机制（Plugins·Skills·Subagents·MCP·ACP 五类子概念不视为同类扩展）／HITL／可观测性／部署与许可。表述约定：每个维度按<b>机制 → 证据 → 判断</b>三句式分行展开；仅对三个最有区分度的机制深读——LangGraph 的 checkpoint（§3.1①）、Codex 的沙箱与管理员策略（§3.2⑦）、OpenClaw 的信任域与供应链（§3.3⑦及专题）。</p>
+<p><b>七维度统一口径</b>：状态／记忆／工具调用／扩展机制（Plugins·Skills·Subagents·MCP·ACP 五类子概念不视为同类扩展）／HITL／可观测性／部署与许可。表述约定：每个维度按<b>机制 → 证据 → 判断</b>三句式分行展开；仅对三个最有区分度的机制深读——LangGraph 的 checkpoint（§3.1①）、Codex 的沙箱与管理员策略（§3.2⑦）、OpenClaw 的信任域与供应链（§3.3⑦及专题）。</p>
 
 <h3 id="sec-3-1">3.1 LangGraph（库/SDK 层代表）：图执行 + 持久化 checkpoint</h3>
 
@@ -523,7 +523,7 @@
 <p class="bt">推荐：国内平台生态 → Hermes-Agent；国际渠道 → OpenClaw（同层直接竞品，二选一）</p>
 <p><b>理由</b>：Hermes（国内首选）记忆工程化扎实（冻结快照保前缀缓存 + 跨会话全文检索）+ <b>国内消息平台适配 7 者最深</b>（微信/企微/钉钉/飞书/QQ 官方 API 直连、免公网端点）+ 状态持久化工程化罕见（SQLite+WAL、跨整机重启自动续接会话）+ HITL 三档硬底线适合无人值守。OpenClaw（国际渠道首选）记忆体系文档层最完整（五层 + 防投毒溯源 + 混合检索 + 常驻意图）+ 模型与 harness 双插件化 + 治理与披露文化成熟。选择轴：渠道生态 + 安全偏好（审批分层→Hermes；供应链防御→OpenClaw）。</p>
 <p><b>主要风险</b>：两者都是"个人/小团队可信操作员"设计——多用户共享需隔离自建（非多租户）；OpenClaw 事件史要求加固与版本跟踪；Hermes 日更量级要锁版本；微信个人号群聊受限。</p>
-<p><b>核心判断标准：记忆系统最重要的不是能存多少，而是能否在正确的时间把正确的信息提供给正确的用户。</b>机制不直接等于记忆效果——公开的记忆质量评测数据不存在，落地前应按记忆七指标自建评测（两工具设计机制对照见调研卡）。<b>团队场景注意 Memory Isolation</b>：两者默认以 agent 为记忆边界——团队共享一个助理即共享全部记忆，可行解是按成员拆分 agent 或显式接受团队级共享。</p>
+<p><b>核心判断标准：记忆系统最重要的不是能存多少，而是能否在正确的时间把正确的信息提供给正确的用户。</b>机制不直接等于记忆效果——公开的记忆质量评测数据不存在，落地前应自建记忆质量评测。<b>团队场景注意 Memory Isolation</b>：两者默认以 agent 为记忆边界——团队共享一个助理即共享全部记忆，可行解是按成员拆分 agent 或显式接受团队级共享。</p>
 </div>
 <p><b>否决</b>：Codex memories 长期记忆默认关闭（§3.2）、无消息渠道——编码工具不是团队助理；Pi 无内建长期记忆（极简哲学要求记忆自建或装包）；dsh 长期记忆无内置（仅三个默认关闭的第三方 MCP 参考）；库层两者记忆、渠道、守护进程全要自建，达到产品层体验的工程量不经济。</p>
 
@@ -560,10 +560,10 @@
 <h2 class="pagebreak" id="sec-6">6 附录：调研方法与信息来源</h2>
 
 <h3 id="sec-6-1">6.1 调研方法</h3>
-<p>五阶段流水线：存在性核实 → 文档级调研卡 → 源码深读（三代表仓库克隆逐文件阅读，<a href="#sec-3">§3</a> 源码引用出自深读笔记 <code>research/*-deep.md</code>，完整文件清单、行号与统计数字见各调研卡）→ 综合写作 → 引用抽查终检。<b>反幻觉纪律</b>：调研中与任务书预设冲突的结论（如"FastMCP 已捐给 Pydantic"被证伪、Codex 多处流传口径被源码推翻）均以查证证据为准修正。</p>
+<p>五阶段流水线：存在性核实 → 文档级调研 → 源码深读（三代表仓库克隆逐文件阅读，<a href="#sec-3">§3</a> 源码引用即出自深读过程）→ 综合写作 → 引用抽查终检。<b>反幻觉纪律</b>：调研中与任务书预设冲突的结论（如"FastMCP 已捐给 Pydantic"被证伪、Codex 多处流传口径被源码推翻）均以查证证据为准修正。</p>
 
 <h3 id="sec-6-2">6.2 "查无实据"核实记录</h3>
-<p>本报告<b>未发生</b>"工具查无此物"的情形。如实标注的"未找到"项：LangGraph OSS 层原生 OTel exporter；OpenClaw checkpoint / time-travel 专门功能与产品内评测框架；Pi 内建长期记忆；Pydantic-AI 智谱内置 provider 与 vLLM 官方 provider 页；dsh 独立分布式 trace 视图与产品级评测数据集——详情见调研卡。</p>
+<p>本报告<b>未发生</b>"工具查无此物"的情形。如实标注的"未找到"项：LangGraph OSS 层原生 OTel exporter；OpenClaw checkpoint / time-travel 专门功能与产品内评测框架；Pi 内建长期记忆；Pydantic-AI 智谱内置 provider 与 vLLM 官方 provider 页；dsh 独立分布式 trace 视图与产品级评测数据集。</p>
 
 <h3 id="sec-6-3">6.3 信息源与版本锚定</h3>
 
@@ -585,7 +585,7 @@
 <tr><td><b>Hermes-Agent</b></td><td>v0.22.6</td><td class="src"><a href="https://hermes-agent.nousresearch.com/docs/user-guide/security">user-guide/security</a>（审批与黑名单）｜ <a href="https://hermes-agent.nousresearch.com/docs/integrations/providers">integrations/providers</a>（模型接入）</td></tr>
 </table>
 
-<p><b>注册表与第三方佐证</b>：npm / PyPI registry API（2026-11-03）；安全事件佐证——CCB Belgium 公告（ccb.belgium.be，1-click RCE advisory）、SentinelOne / Cisco / Immersive Labs 分析、arXiv:2503.03704（记忆投毒 MINJA）等。完整 URL 清单见随附调研卡 <code>research/*.md</code>。</p>
+<p><b>注册表与第三方佐证</b>：npm / PyPI registry API（2026-11-03）；安全事件佐证——CCB Belgium 公告（ccb.belgium.be，1-click RCE advisory）、SentinelOne / Cisco / Immersive Labs 分析、arXiv:2503.03704（记忆投毒 MINJA）等。</p>
 
 <p class="small" style="margin-top:6pt;color:#888">报告生成：2026-11-03</p>
 
