@@ -6,7 +6,7 @@
 
 ## 交付物
 
-- **`report/question1-调研报告.pdf`** — 调研报告定稿（18 页，2026-11-05）
+- **`report/question1-调研报告.pdf`** — 调研报告定稿（21 页，2026-11-05）
 - `report/report.html` — 报告源文件（单文件，内嵌 CSS + SVG）
 - `research/` — 10 份调研卡（7 工具文档级调研 + LangGraph/Codex/OpenClaw 三深读笔记），报告论断的证据链
 - `spec.md` — 立项规格（调研方法、分层假设、深读代表选择）

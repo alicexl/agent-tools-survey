@@ -42,6 +42,9 @@
   figure { margin: 10pt 0; page-break-inside: avoid; text-align: center; }
   figcaption { font-size: 8.8pt; color: #556; margin-top: 4pt; text-align: center; }
   .tag { display: inline-block; font-size: 7.8pt; padding: 0.5pt 5pt; border-radius: 7pt; color: #fff; background: #456990; vertical-align: 1pt; }
+  .tag.lib { background: #1f7a4d; }
+  .tag.harness { background: #14425f; }
+  .tag.product { background: #b0531f; }
   .verdict { font-weight: 700; color: #0d2b45; }
   .neg { color: #b0531f; }
   .pos { color: #1f7a4d; }
@@ -75,7 +78,7 @@
 <tr><td class="n"><a href="#sec-0">0</a></td><td><a href="#sec-0">结论摘要（含七工具总览矩阵）</a></td></tr>
 <tr><td class="n"><a href="#sec-1">1</a></td><td><a href="#sec-1">存在性核实</a></td></tr>
 <tr><td class="n"><a href="#sec-2">2</a></td><td><a href="#sec-2">分层定位与关系图</a>　<a href="#sec-2-1">2.1 三层定位表与归层依据</a>　<a href="#sec-2-2">2.2 关系图与 MCP/ACP 方向明细</a>　<a href="#sec-2-3">2.3 跨层直比为何误导与比较方法</a></td></tr>
-<tr><td class="n"><a href="#sec-3">3</a></td><td><a href="#sec-3">架构与核心抽象（能力状态四态 · 七维度统一定义）</a>　<a href="#sec-3-1">3.1 LangGraph</a>　<a href="#sec-3-2">3.2 Codex CLI</a>　<a href="#sec-3-3">3.3 OpenClaw</a>　<a href="#sec-3-4">3.4 其余五工具简述</a></td></tr>
+<tr><td class="n"><a href="#sec-3">3</a></td><td><a href="#sec-3">架构与核心抽象（深析 ×3 + 简述 ×5）</a>　<a href="#sec-3-1">3.1 LangGraph</a>　<a href="#sec-3-2">3.2 Codex CLI</a>　<a href="#sec-3-3">3.3 OpenClaw</a>　<a href="#sec-3-4">3.4 其余五工具简述</a></td></tr>
 <tr><td class="n"><a href="#sec-4">4</a></td><td><a href="#sec-4">企业落地考量</a>　<a href="#sec-4-1">4.1 安全</a>　<a href="#sec-4-2">4.2 合规</a>　<a href="#sec-4-3">4.3 成本</a>　<a href="#sec-4-4">4.4 维护成熟度</a>　<a href="#sec-4-5">4.5 国内可用性</a></td></tr>
 <tr><td class="n"><a href="#sec-5">5</a></td><td><a href="#sec-5">场景选型建议</a>（<a href="#sec-5-1">5.1 内网合规问答</a> · <a href="#sec-5-2">5.2 高并发客服</a> · <a href="#sec-5-3">5.3 研发助手</a> · <a href="#sec-5-4">5.4 长期记忆助理</a>）　<a href="#sec-5-5">5.5 题目 2 选型论证</a></td></tr>
 <tr><td class="n"><a href="#sec-6">6</a></td><td><a href="#sec-6">附录</a>　<a href="#sec-6-1">6.1 调研方法</a>　<a href="#sec-6-2">6.2 "查无实据"核实记录</a>　<a href="#sec-6-3">6.3 信息源与版本锚定</a></td></tr>
@@ -123,7 +126,7 @@
 <tr><td><b>Pi</b></td><td class="src">earendil-works/pi</td><td>✅ 存在</td><td>v1.5.0（11-02）</td><td>MIT</td></tr>
 </table>
 
-<p><b>口径声明：</b>三个深读代表使用当日 main 分支并锚定 commit：<a href="https://github.com/langchain-ai/langgraph/tree/3c916d750575b22c464790e9774494d810ccd322"><code>LangGraph 3c916d7</code></a>、<a href="https://github.com/openai/codex/tree/bfdbf01"><code>Codex CLI bfdbf01</code></a>、<a href="https://github.com/openclaw/openclaw/tree/4285c6ce"><code>OpenClaw 4285c6ce</code></a>（2026-11-03）。正文源码引用给出相对仓库根的文件路径，行号与完整清单见随附调研卡；关键论断处挂源码永久链接（permalink），全部版本锚定见 <a href="#sec-6-3">§6.3</a>。</p>
+<p><b>口径声明：</b>三个深读代表使用当日（2026-11-03）main 分支并锚定 commit：LangGraph <code>3c916d7</code>、Codex CLI <code>bfdbf01</code>、OpenClaw <code>4285c6ce</code>。正文源码引用给出相对仓库根的文件路径，行号与完整清单见随附调研卡；关键论断处挂源码永久链接（permalink），全部版本锚定与永久链接见 <a href="#sec-6-3">§6.3</a>。</p>
 
 <h2 id="sec-2" class="pagebreak">2 分层定位与关系图</h2>
 
@@ -371,7 +374,7 @@
 <ul>
 <li><b>默认冷却</b>：<a href="https://github.com/openclaw/openclaw/blob/4285c6ce/pnpm-workspace.yaml#L9-L10"><code>pnpm-workspace.yaml</code></a> <code>minimumReleaseAge: 10080</code>（7 天）+ strict——任何依赖新版本必须"冷"满 7 天才进安装图，直接挡掉"即发即投毒"窗口</li>
 <li><b>豁免即台账</b>：每条豁免带评审依据（PR 号/事件）+ 责任人 + remove-after 期限——<code>@lancedb/lancedb@0.41.0</code> 标注 "Approved LanceDB compromised-CA remediation"（上游 CA 受陷修复版即时放行）；<code>@openai/codex</code> 因信任分级整体豁免——OpenAI 发布链被显式信任到可豁免冷却，其余 npm 生态不可</li>
-<li><b>反面记录</b>：2026 年初爆发期安全事件密集——CCB Belgium 公告 1-click RCE（CVSS 8.8，影响 &lt;2026.1.29）；ClawHub 出现大规模恶意 Skills 供应链事件，<b>不同研究机构在不同时间窗口识别到数百个恶意 Skills</b>（如 IMDA 报告引 Koi Security：2026-02-01 发现 341 个、02-16 报告 824 个；Unit 42 对 02—05 月的后续分析仍发现 5 个绕过初期治理的样本——检测命中、确认恶意、已下架、仍可下载是不同口径，不混用单一数字）；多所机构发布停用通告。企业落地必须走 hardened baseline（sandbox all + 权限档 + 审批默认开），并对 Skills 安装实施来源准入、静态扫描、版本锁定与人工审查</li>
+<li><b>反面记录</b>：2026 年初爆发期安全事件密集——CCB Belgium 公告 1-click RCE、ClawHub 大规模恶意 Skills 供应链事件、多所机构停用通告（事件明细与数字口径、企业加固基线见 <a href="#sec-4-1">§4.1</a>）</li>
 </ul>
 
 <h3 id="sec-3-4">3.4 其余五工具简述（相对同层深读代表的关键差异）</h3>
@@ -421,11 +424,13 @@
 <tr><td><b>dsh</b></td><td>凭据存 <code>$DSH_HOME/.credentials.yaml</code>（界面回显脱敏）</td><td>SAFETY.md 自认<b>未做安全审计</b>；<b>动态插件是独有攻击面</b>（agent 自写、有审批门）；注册表冒名包实锤</td></tr>
 <tr><td><b>Codex CLI</b></td><td>file / keyring / auto 三选 + 命令式 auth 短时 token；子进程环境默认滤 KEY/SECRET/TOKEN</td><td>cargo-deny 依赖审计；风险 = 周级发版节奏、无插件签名机制</td></tr>
 <tr><td><b>Pi</b></td><td>models.json 支持 <code>$ENV</code> 插值与 <code>!command</code>（可接外部密钥管理器）</td><td><b>自律最完整之一</b>（锁版本 + 冷却期 + OIDC 签名 + SHA256SUMS）；但扩展进程内全权限执行，装前人工审代码是唯一防线</td></tr>
-<tr><td><b>OpenClaw</b></td><td>SecretRef 三源（env / file / exec：1Password / Vault / SOPS）+ 明文凭据审计扫描</td><td><b>防御体系 7 者最完整</b>（7 天冷却 + 台账 + GHSA 规则化）；<span class="neg">但有真实事件史：CCB RCE + ClawHub 恶意 Skills 供应链事件（见 §3.3 口径注记）</span></td></tr>
+<tr><td><b>OpenClaw</b></td><td>SecretRef 三源（env / file / exec：1Password / Vault / SOPS）+ 明文凭据审计扫描</td><td><b>防御体系 7 者最完整</b>（7 天冷却 + 台账 + GHSA 规则化，机制见 <a href="#sec-3-3">§3.3</a> 专题）；<span class="neg">但有真实事件史（见下文）</span></td></tr>
 <tr><td><b>Hermes-Agent</b></td><td>凭据保险库（Bitwarden / 1Password）；MCP 子进程 env 白名单</td><td><span class="neg">hooks 目录"放入即加载"无确认门（文档自认）</span>，须纳入基线审计</td></tr>
 </table>
 
-<p><b>安全面的三个跨层结论</b>：沙箱强度（同层比较）Codex（内核级、三平台、默认降级保护）＞ dsh（三平台但 Windows 隔离不完整且无审计）＞ Pi（无，靠外置容器）——库层与产品层不参与此排序（前者不执行、后者的威胁模型在网关与渠道侧）；产品层的核心安全命题不是沙箱而是<b>渠道攻击面</b>——OpenClaw 事件史（<a href="#sec-3-3">§3.3</a>）证明"常驻网关+聊天机器人"的暴露面与传统 Web 服务同构，须按互联网服务标准加固与披露跟踪；供应链正成为分层新维度——OpenClaw（冷却+台账）与 Pi（pin+release-age）把依赖治理做进工程默认，dsh/Hermes 的插件/技能市场面需企业自有准入控制兜底。</p>
+<p><b>OpenClaw 事件史（2026 年初）</b>：CCB Belgium 公告 1-click RCE（CVSS 8.8，影响 &lt;2026.1.29）；ClawHub 大规模恶意 Skills 供应链事件——<b>不同研究机构在不同时间窗口识别到数百个恶意 Skills</b>（IMDA 报告引 Koi Security：2026-02-01 发现 341 个、02-16 报告 824 个；Unit 42 对 02—05 月的后续分析仍发现 5 个绕过初期治理的样本——检测命中、确认恶意、已下架、仍可下载是不同口径，不混用单一数字）；多所机构发布停用通告。企业落地必须走 hardened baseline（sandbox all + 权限档 + 审批默认开），并对 Skills 安装实施来源准入、静态扫描、版本锁定与人工审查。</p>
+
+<p><b>安全面的三个跨层结论</b>：沙箱强度（同层比较）Codex（内核级、三平台、默认降级保护）＞ dsh（三平台但 Windows 隔离不完整且无审计）＞ Pi（无，靠外置容器）——库层与产品层不参与此排序（前者不执行、后者的威胁模型在网关与渠道侧）；产品层的核心安全命题不是沙箱而是<b>渠道攻击面</b>——上段 OpenClaw 事件史证明"常驻网关+聊天机器人"的暴露面与传统 Web 服务同构，须按互联网服务标准加固与披露跟踪；供应链正成为分层新维度——OpenClaw（冷却+台账）与 Pi（pin+release-age）把依赖治理做进工程默认，dsh/Hermes 的插件/技能市场面需企业自有准入控制兜底。</p>
 
 <h3 id="sec-4-2">4.2 合规：私有化、数据不出境、审计留痕、许可证</h3>
 
@@ -492,7 +497,7 @@
 <p><b>理由</b>：合规问答是<b>确定性工作流 + 检索</b>，不需要自主执行 shell/文件的 agent 能力——工具执行面就是攻击面，本场景应<b>最小化工具集</b>（只读检索工具）——库层甜区：行为可控、每步可审计、对话数据落哪家库带哪个租户列全由企业自定（Pydantic-AI 依赖面最小、SBOM 审计友好，结构化输出 <code>output_type</code> 强制引用字段 schema、校验失败自动回喂）。若流程含多步审批（答案需合规官复核后发布），LangGraph 的 interrupt() / Command(resume) 持久化审批语义现成。</p>
 <p><b>主要风险</b>：检索质量是答案质量的天花板（合规文档多口径表述需检索层显式处理）；LangGraph 备选时 checkpoint 默认明文存全量对话，须强制 AES + 库权限 + 保留策略；引入执行类工具须自配隔离（库层无沙箱）。</p>
 </div>
-<p><b>否决</b>：OpenClaw / Hermes 多租户隔离不足的个人助手架构，20+ 渠道与工具执行面是多余攻击面（<a href="#sec-4-1">§4.1</a>，OpenClaw 另有 RCE 事件史 <a href="#sec-3-3">§3.3</a>）；dsh preview 状态 + 审计缺口 + 默认日志上传（<a href="#sec-4-1">§4.1–4.2</a>）；Codex 定位错配且默认流量出境；Pi 无权限系统、企业必备件全自建——对本场景"自建"的部分，库层反而更轻。</p>
+<p><b>否决</b>：OpenClaw / Hermes 多租户隔离不足的个人助手架构，20+ 渠道与工具执行面是多余攻击面（<a href="#sec-4-1">§4.1</a>，OpenClaw 另有 RCE 事件史）；dsh preview 状态 + 审计缺口 + 默认日志上传（<a href="#sec-4-1">§4.1–4.2</a>）；Codex 定位错配且默认流量出境；Pi 无权限系统、企业必备件全自建——对本场景"自建"的部分，库层反而更轻。</p>
 
 <h3 id="sec-5-2">5.2 场景 (b)：面向 C 端的高并发客服</h3>
 <p><b>需求画像</b>：水平扩展、低延迟、成本敏感、结构化输出（工单/意图分类）、故障隔离、内容安全。</p>

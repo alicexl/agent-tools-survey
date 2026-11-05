@@ -11,7 +11,7 @@ OpenClaw               openclaw/openclaw
 Nous Hermes-Agent      NousResearch/hermes-agent （指 Agent 项目，不是 Hermes 系列模型）
 DeepSeek Harness       deepseek-ai/deepseek-harness （命令行 dsh ）
 开源版 Codex            OpenAI Codex CLI，即 openai/codex （不是 2021 年的 Codex 模型，也不是云端的 Codex Web 产品）
-Pi                     Pi（官网 pi.dev；官方仓库以官网链接为准，即 earendil-works/pi ，npm 包 @earendil-works/pi-coding-agent ，命令行 pi ）。不要与其他同名项目混淆
+Pi                     Pi（官网pi.dev；官方仓库以官网链接为准，即earendil-works/pi，npm包@earendil-works/pi-coding-agent，命令行pi）。不要与其他同名项目混淆
 
 本题不要求编写代码或运行实测，重点考察理解、调研与判断能力。可以阅读源码、文档、Issue 与社区讨论，也可以按需自行试用。
 
