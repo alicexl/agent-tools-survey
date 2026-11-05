@@ -16,7 +16,7 @@ import urllib.request
 import websocket
 
 CHROME = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-HTML_URL = "file:///D:/workspace/agent-tools-survey/report/report.html"
+HTML_URL = "file:///D:/workspace/agent-tools-survey/report/Agent开发工具的分层定位与企业选型调研.html"
 OUT_PDF = r"D:\workspace\agent-tools-survey\report\report_new.pdf"
 USER_DATA = tempfile.mkdtemp(prefix="chrome-print-profile-")
 DATE = "2026-11-03"

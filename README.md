@@ -6,8 +6,8 @@
 
 ## 交付物（最终提交 = PDF + HTML，报告自包含，引用均可由正文链接与 §6.3 版本锚定回溯）
 
-- **`report/question1-调研报告.pdf`** — 调研报告定稿（21 页，2026-11-05）
-- `report/report.html` — 报告源文件（单文件，内嵌 CSS + SVG）
+- **`report/Agent开发工具的分层定位与企业选型调研.pdf`** — 调研报告定稿（20 页，2026-11-05）
+- `report/Agent开发工具的分层定位与企业选型调研.html` — 报告源文件（单文件，内嵌 CSS + SVG）
 
 ## 过程产物（仅仓库存档，不随报告提交）
 
@@ -24,7 +24,7 @@
 
 ```bash
 cd report
-python -X utf8 print_report.py && mv -f report_new.pdf question1-调研报告.pdf
+python -X utf8 print_report.py && mv -f report_new.pdf "Agent开发工具的分层定位与企业选型调研.pdf"
 ```
 
 CDP 驱动 Chrome headless 打印（页眉 + 页码页脚）。依赖：`websocket-client`、Chrome（Program Files (x86)）、系统安装 Noto Sans CJK SC **静态 TTF**（Chrome 打印时 CFF/可变字体会被转 Type3 轮廓，导致 PDF 文本不可检索）。
