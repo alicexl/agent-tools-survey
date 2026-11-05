@@ -27,6 +27,10 @@
   th { background: #e9eff5; color: #0d2b45; padding: 4pt 6pt; text-align: left; font-weight: 700; border-bottom: 1pt solid #9db4c8; }
   td { border: 0.5pt solid #dde3ea; padding: 3.5pt 6pt; vertical-align: top; }
   tr:nth-child(even) td { background: #f6f8fa; }
+  .toc { border: none; font-size: 10.5pt; line-height: 1.7; margin: 10pt 0 4pt; }
+  .toc td { border: none; border-bottom: 0.6pt solid #e3e8ee; padding: 5.5pt 4pt; background: none; }
+  .toc tr:nth-child(even) td { background: none; }
+  .toc td.n { width: 26pt; font-weight: 700; color: #0d2b45; }
   code, .path { font-family: Consolas, "Courier New", monospace; font-size: 8.6pt; background: #eef2f6; padding: 0.5pt 3pt; border-radius: 2.5pt; color: #0f3a5d; }
   .src { color: #667; font-size: 8.2pt; font-family: Consolas, monospace; }
   a { color: #14425f; text-decoration: none; border-bottom: 0.6pt dotted #7894ab; }
@@ -85,7 +89,7 @@
 </table>
 <p class="small">目录条目可点击跳转；正文中源码与文档引用挂有永久链接（见 <a href="#sec-6-3">§6.3</a> 版本锚定表）。</p>
 
-<h2 id="sec-0">0 结论摘要</h2>
+<h2 class="pagebreak" id="sec-0">0 结论摘要</h2>
 
 <p>本报告对题目指定的 7 个工具逐一做了存在性核实与文档级调研，并对每层一个代表——库层 LangGraph、Harness 层 Codex CLI、产品层 OpenClaw——完成源码深读（其余工具对照简述，见 <a href="#sec-3-4">§3.4</a>）。三条核心发现：</p>
 
@@ -110,7 +114,7 @@
 
 <p><b>四场景推荐结论</b>（论证见 <a href="#sec-5">§5</a>）：(a) 金融机构内网合规问答 → 库层自建 RAG + 内网模型；(b) C 端高并发客服 → 库层做无状态服务；(c) 研发编码运维助手 → Codex CLI 为当前生产工具（配企业策略管理）、dsh 为国产化 Runtime 的 PoC / 二次开发候选；(d) 长期记忆助理 → 国内生态 Hermes-Agent、国际渠道 OpenClaw 二选一。题目 2（招股书问答 Agent）选型：Pydantic-AI + 自建确定性层 + 国产模型实测选型（论证见 <a href="#sec-5-5">§5.5</a>）。</p>
 
-<h2 id="sec-1">1 存在性核实</h2>
+<h2 class="pagebreak" id="sec-1">1 存在性核实</h2>
 
 <p>7 个指代均经 GitHub API + 官网 + npm/PyPI 注册表双通道核实：</p>
 
@@ -285,7 +289,7 @@
 <h2 class="pagebreak" id="sec-3">3 架构与核心抽象（深析 ×3 + 简述 ×5）</h2>
 
 <p>深读代表：<b>库层 LangGraph</b>、<b>Harness 层 Codex CLI</b>、<b>产品层 OpenClaw</b>。其余五工具简述见 <a href="#sec-3-4">§3.4</a>。能力状态四态：<b>已实现</b>／<b>默认启用</b>／<b>实验性·可选</b>／<b>未实现</b>——已实现不等于默认获得完整体验，两者分开表述。</p>
-<p><b>七维度统一口径</b>：状态／记忆／工具调用／扩展机制（Plugins·Skills·Subagents·MCP·ACP 五类子概念不视为同类扩展）／HITL／可观测性／部署与许可。表述约定：每个维度按<b>机制 → 证据 → 判断</b>三句式分行展开；仅对三个最有区分度的机制深读——LangGraph 的 checkpoint（§3.1①）、Codex 的沙箱与管理员策略（§3.2⑦）、OpenClaw 的信任域与供应链（§3.3⑦及专题）。</p>
+<p><b>七维度统一口径</b>：状态／记忆／工具调用／扩展机制（Plugins·Skills·Subagents·MCP·ACP 五类子概念不视为同类扩展）／HITL／可观测性／部署与许可。表述约定：每个维度按<b>机制 → 证据 → 判断</b>三句式分行展开；仅对三个最有区分度的机制深读——LangGraph 的 checkpoint（<a href="#sec-3-1">§3.1①</a>）、Codex 的沙箱与管理员策略（<a href="#sec-3-2">§3.2⑦</a>）、OpenClaw 的信任域与供应链（<a href="#sec-3-3">§3.3⑦及专题</a>）。</p>
 
 <h3 id="sec-3-1">3.1 LangGraph（库/SDK 层代表）：图执行 + 持久化 checkpoint</h3>
 
@@ -293,7 +297,7 @@
 <p><b>判断：完整实现。</b>双持久化抽象：Checkpointer 管 thread 内图状态快照，Store 管跨 thread 应用数据（见②）；断点恢复、回放、分叉都基于 checkpoint。</p>
 <ul>
 <li><b>存储可插拔</b>：<code>BaseCheckpointSaver</code> 定义统一契约，参考实现从 InMemory 到 Sqlite/Postgres，另有 conformance 一致性测试套件——官方有意把存储做成生态</li>
-<li><b>设计边界：恢复执行 ≠ 回滚副作用</b>——checkpoint（含 time-travel 分叉与 interrupt 重放）保证的是<b>工作流状态</b>的持久化与恢复，不提供外部副作用的事务性回滚：节点若已写数据库、发过邮件、调过外部接口，恢复到更早 checkpoint 并不撤销这些操作，涉及外部写仍需幂等键、操作日志、补偿事务等工程机制。横向看，Codex 的 rollout 不可变 + revert、OpenClaw 的会话恢复同样只回滚<b>对话与任务状态</b>；七者中仅 Hermes 另提供文件级 <code>/checkpoints + /rollback</code>（shadow git 快照，opt-in），但也只覆盖本地文件，不触及外部系统</li>
+<li><b>设计边界：恢复执行 ≠ 回滚副作用</b>——checkpoint（含 time-travel 分叉与 interrupt 重放）保证的是<b>工作流状态</b>的持久化与恢复，不提供外部副作用的事务性回滚：节点若已写数据库、发过邮件、调过外部接口，恢复到更早 checkpoint 并不撤销这些操作，涉及外部写仍需幂等键、操作日志、补偿事务等工程机制。横向看，<a href="#sec-3-2">Codex</a> 的 rollout 不可变 + revert、<a href="#sec-3-3">OpenClaw</a> 的会话恢复同样只回滚<b>对话与任务状态</b>；七者中仅 <a href="#sec-3-4">Hermes</a> 另提供文件级 <code>/checkpoints + /rollback</code>（shadow git 快照，opt-in），但也只覆盖本地文件，不触及外部系统</li>
 </ul>
 
 <h4>② 记忆：✅ 有（短期 + 长期两套）；语义检索需自备 embedding</h4>
@@ -303,7 +307,7 @@
 <p><b>机制</b>　LangGraph 消费 <code>BaseTool/ToolCall/BaseMessage</code>，pydantic 校验由 langchain-core 层完成；<code>ToolNode</code> 逐 tool_call 执行，工具可返回 <code>Command</code> 改状态/跳转；结构化输出双策略（模型原生 / 工具模拟）。<br><b>证据</b>　<code>tool_node.py</code> 的 <code>_filter_validation_errors</code>——LLM 可控参数错误回喂模型自纠、系统注入参数（InjectedState 等）剔除。<br><b>判断</b>　校验与自纠闭环完整但不在本库；⚠ <code>langchain-mcp-adapters</code> 已停维护、MCP 支持并入主包 <code>langchain[mcp]</code>，选型勿引旧包。</p>
 
 <h4>④ 扩展机制：⚠ 只有积木，没有编排器</h4>
-<p><b>机制</b>　编排原语齐备：subgraph（图本身是 Runnable，子图 checkpoint 与父图共用同一 thread 存储）、<code>Send</code> 动态并行（map-reduce）、<code>Command</code> 跳转。<br><b>证据</b>　<code>types.py</code>；supervisor/swarm 编排器在 monorepo 内<b>未实现</b>（仅测试 fixture 命中）。<br><b>判断</b>　只有积木、没有编排器——官方路径是独立仓 <code>langgraph-supervisor-py</code> / <code>langgraph-swarm-py</code> + 本库原语；<code>create_react_agent</code> 已标 deprecated，能力上移至 langchain 仓的 <code>create_agent</code>。</p>
+<p><b>机制</b>　编排原语齐备：subgraph（图本身是 Runnable，子图 checkpoint 与父图共用同一 thread 存储）、<code>Send</code> 动态并行（map-reduce）、<code>Command</code> 跳转。<br><b>证据</b>　<code>types.py</code>；supervisor/swarm 编排器在 monorepo 内<b>未实现</b>（仅测试 fixture 命中）。<br><b>判断</b>　只有积木、没有编排器——官方路径是独立仓 <code>langgraph-supervisor-py</code> / <code>langgraph-swarm-py</code> + 本库原语；<code>create_react_agent</code> 已标 deprecated，能力上移至 langchain 仓的 <a href="#sec-2-1"><code>create_agent</code></a>。</p>
 
 <h4>⑤ HITL：✅ 有，且与崩溃恢复共用一套持久化机制</h4>
 <p><b>机制</b>　<code>interrupt(value)</code>（<code>types.py</code>）抛出中断，被 runner 的 <code>commit()</code> 捕获，把中断点当作未完成写入存进状态——"等待人工"与"进程崩溃"在存储层是同一种东西；<code>Command(resume=...)</code> 时节点从头重放，已答过的审批不重复问；另支持 <code>response_schema</code> 类型化审批表单。<br><b>证据</b>　<a href="https://github.com/langchain-ai/langgraph/blob/3c916d750575b22c464790e9774494d810ccd322/libs/langgraph/langgraph/types.py#L903"><code>types.py</code></a>、<a href="https://github.com/langchain-ai/langgraph/blob/3c916d750575b22c464790e9774494d810ccd322/libs/langgraph/langgraph/pregel/_runner.py#L575-L590"><code>pregel/_runner.py</code></a>。<br><b>判断</b>　恢复语义统一；坑写进文档——节点重跑意味着 interrupt 前代码会再执行（副作用须幂等），不可用 try/except 包 interrupt。</p>
@@ -317,7 +321,7 @@
 <h3 id="sec-3-2">3.2 Codex CLI（Runtime/Harness 层代表）：内核级沙箱 + 企业治理面</h3>
 
 <h4>① 状态：✅ 有（rollout 不可变会话 + resume），但无快照式 checkpoint</h4>
-<p><b>机制</b>　会话落盘为 append-only JSONL（真相源）+ SQLite 索引层，fork/回退新开文件、thread_id 稳定；<code>codex resume / fork / queue</code> 入口齐全，非交互 <code>codex exec resume</code> 保留原 transcript、plan history 与 approvals。<br><b>证据</b>　<code>rollout/src/lib.rs</code>；用户可感知的"回退"是 Esc-Esc backtrack，非 checkpoint 回放。<br><b>判断</b>　有恢复、无快照——代码里的 "checkpoint" 是压缩检查点而非产品级快照，没有 LangGraph 式 time-travel。</p>
+<p><b>机制</b>　会话落盘为 append-only JSONL（真相源）+ SQLite 索引层，fork/回退新开文件、thread_id 稳定；<code>codex resume / fork / queue</code> 入口齐全，非交互 <code>codex exec resume</code> 保留原 transcript、plan history 与 approvals。<br><b>证据</b>　<code>rollout/src/lib.rs</code>；用户可感知的"回退"是 Esc-Esc backtrack，非 checkpoint 回放。<br><b>判断</b>　有恢复、无快照——代码里的 "checkpoint" 是压缩检查点而非产品级快照，没有 <a href="#sec-3-1">LangGraph</a> 式 time-travel。</p>
 
 <h4>② 记忆：✅ 有（AGENTS.md 双层 + memories 两阶段长期管线）</h4>
 <p><b>机制</b>　项目记忆（AGENTS.md 沿项目根向上收集拼接）与全局记忆（<code>~/.codex/AGENTS.md</code>）双层；长期记忆两阶段管线——后台从闲置 rollout 抽取结构化记忆 → consolidation 合并整编；会话内压缩三路（本地摘要 / 服务端压缩 / token 预算式开新窗）。<br><b>证据</b>　<code>core/src/agents_md.rs</code>、<code>core/src/memories/</code>（工件存 <code>$CODEX_HOME/memories/</code>）。<br><b>判断</b>　体系完整，但长期记忆<b>已实现、默认关闭</b>（<code>features.memories</code> 默认 off，需显式开启）。</p>
@@ -381,7 +385,7 @@
 <p>七维度全量概览见 <a href="#sec-0">§0</a> 总览矩阵；安全、合规、国内可用性等企业维度见 <a href="#sec-4">§4</a> 各表。本节只写各工具与同层深读代表（LangGraph / Codex / OpenClaw）的关键差异：</p>
 
 <table>
-<thead><tr><th style="width:11%">工具</th><th style="width:51%">相对同层代表的关键差异</th><th style="width:38%">企业/国内结论（详见 §4）</th></tr></thead>
+<thead><tr><th style="width:11%">工具</th><th style="width:51%">相对同层代表的关键差异</th><th style="width:38%">企业/国内结论（详见 <a href="#sec-4">§4</a>）</th></tr></thead>
 <tr><td><b>LangChain</b><br><span class="small">vs LangGraph</span></td>
 <td>同仓不同位：supervisor/swarm 编排器在 LangChain 侧现成（多 agent 五模式），LangGraph 侧只有编排积木（<a href="#sec-3-1">§3.1④</a>）。</td>
 <td>中文资料 7 者最厚；DeepSeek / Ollama 官方合作包；Qwen 走第三方包、community 停维护应避开（<a href="#sec-4-5">§4.5</a>）。</td></tr>
@@ -470,7 +474,7 @@
 <tr><td><b>Hermes-Agent</b></td><td>2025-07</td><td>Nous Research（teknium1 联创主导），数百 contributors</td><td>26.0 万★，当日提交</td><td><b>生产级倾向</b>，但日更量级=回归风险并存</td></tr>
 </table>
 
-<p><b>过程指标之外，成熟度更要看质量指标</b>——stars、commit 与测试数量是活跃度信号，不直接证明生产成熟度：核心维护者集中度（Bus Factor）Hermes 联创主导、Pi 双主力——集中意味着路线连贯但单点风险，dsh 六人千级 commits、OpenClaw 基金会群体相对分散；Issue/PR 响应与发布质量——dsh 不收 GitHub issues、Pi 对新贡献者 issue/PR 默认自动关闭（求助有门槛）、LangGraph 单 release 窗口合并数百 PR，CI 质量 Pi（OIDC+SHA256SUMS）、OpenClaw（provenance 签名+600+ 安全披露）、dsh（per-file 覆盖门+双语文档门禁）、Codex（cargo-deny+Bazel）；Breaking Change 频率见 §4.3。</p>
+<p><b>过程指标之外，成熟度更要看质量指标</b>——stars、commit 与测试数量是活跃度信号，不直接证明生产成熟度：核心维护者集中度（Bus Factor）Hermes 联创主导、Pi 双主力——集中意味着路线连贯但单点风险，dsh 六人千级 commits、OpenClaw 基金会群体相对分散；Issue/PR 响应与发布质量——dsh 不收 GitHub issues、Pi 对新贡献者 issue/PR 默认自动关闭（求助有门槛）、LangGraph 单 release 窗口合并数百 PR，CI 质量 Pi（OIDC+SHA256SUMS）、OpenClaw（provenance 签名+600+ 安全披露）、dsh（per-file 覆盖门+双语文档门禁）、Codex（cargo-deny+Bazel）；Breaking Change 频率见 <a href="#sec-4-3">§4.3</a>。</p>
 
 <h3 id="sec-4-5">4.5 国内可用性：国产模型、断网运行、中文资料</h3>
 
@@ -505,7 +509,7 @@
 <p><b>理由</b>：两者都是库，扩展性 = 你的服务架构的扩展性——请求与资源生命周期由服务方完全掌控；Pydantic-AI 路线 Agent 全局无状态、<code>UsageLimits</code> 限制单次运行的请求数/工具调用/Token 与估算成本（成本限制依赖模型计量信息，跨请求与租户预算仍需外部系统管理）、FallbackModel 多模型容灾；LangGraph 路线 checkpointer 挂 Postgres、thread_id 即会话句柄。须写明：<b>它们自身不是现成的多租户 Web 服务</b>——HTTP 服务、任务队列、会话隔离、限流熔断仍需开发团队补齐。</p>
 <p><b>主要风险</b>：结构化输出保证格式、不保证事实——C 端幻觉与内容安全需检索接地 + 审核层兜底；Pydantic-AI v1→v2 有 API 更名、LangChain 处于包布局震荡期，生产须锁精确版本；LangGraph 会话数据全量落 Postgres，需加密与保留策略管控。</p>
 </div>
-<p><b>否决</b>：dsh 虽具备服务化形态（四 profile，见 <a href="#sec-2-1">§2.1</a>）但 preview 状态 + 单用户鉴权 + 多租户治理缺口（<a href="#sec-4-1">§4.1–4.2</a>）；Codex 定位与执行抽象偏编码任务；Pi 服务层、隔离与权限系统全部自建；OpenClaw / Hermes 多租户隔离不足（<a href="#sec-4-1">§4.1</a>）——判断口径是"是否建议直接用作生产级 C 端客服平台"，不是"能否用于该场景"（任何工具作底层 Runtime 二次开发，需按 §2.3 误导四单独验证）。</p>
+<p><b>否决</b>：dsh 虽具备服务化形态（四 profile，见 <a href="#sec-2-1">§2.1</a>）但 preview 状态 + 单用户鉴权 + 多租户治理缺口（<a href="#sec-4-1">§4.1–4.2</a>）；Codex 定位与执行抽象偏编码任务；Pi 服务层、隔离与权限系统全部自建；OpenClaw / Hermes 多租户隔离不足（<a href="#sec-4-1">§4.1</a>）——判断口径是"是否建议直接用作生产级 C 端客服平台"，不是"能否用于该场景"（任何工具作底层 Runtime 二次开发，需按 <a href="#sec-2-3">§2.3</a> 误导四单独验证）。</p>
 
 <h3 id="sec-5-3">5.3 场景 (c)：研发团队内部的编码与运维助手</h3>
 <p><b>需求画像</b>：真实编码能力、命令执行、沙箱隔离、审批、企业统一治理、国产模型可接。</p>
@@ -524,7 +528,7 @@
 <p><b>主要风险</b>：两者都是"个人/小团队可信操作员"设计——多用户共享需隔离自建（非多租户）；OpenClaw 事件史要求加固与版本跟踪；Hermes 日更量级要锁版本；微信个人号群聊受限。</p>
 <p><b>核心判断标准：记忆系统最重要的不是能存多少，而是能否在正确的时间把正确的信息提供给正确的用户。</b>机制不直接等于记忆效果——公开的记忆质量评测数据不存在，落地前应自建记忆质量评测。<b>团队场景注意 Memory Isolation</b>：两者默认以 agent 为记忆边界——团队共享一个助理即共享全部记忆，可行解是按成员拆分 agent 或显式接受团队级共享。</p>
 </div>
-<p><b>否决</b>：Codex memories 长期记忆默认关闭（§3.2）、无消息渠道——编码工具不是团队助理；Pi 无内建长期记忆（极简哲学要求记忆自建或装包）；dsh 长期记忆无内置（仅三个默认关闭的第三方 MCP 参考）；库层两者记忆、渠道、守护进程全要自建，达到产品层体验的工程量不经济。</p>
+<p><b>否决</b>：Codex memories 长期记忆默认关闭（<a href="#sec-3-2">§3.2</a>）、无消息渠道——编码工具不是团队助理；Pi 无内建长期记忆（极简哲学要求记忆自建或装包）；dsh 长期记忆无内置（仅三个默认关闭的第三方 MCP 参考）；库层两者记忆、渠道、守护进程全要自建，达到产品层体验的工程量不经济。</p>
 
 <h3 id="sec-5-5">5.5 题目 2：招股书可溯源问答 Agent 的工具组合</h3>
 
