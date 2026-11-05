@@ -116,7 +116,7 @@
 
 <table>
 <thead><tr><th>工具</th><th>核实指代（org/repo）</th><th>存在性</th><th>最新 release</th><th>许可证</th></tr></thead>
-<tr><td><b>LangChain</b></td><td class="src">langchain-ai/langchain</td><td>✅ 存在</td><td>多包分别发版（列 core 1.7.4）</td><td>MIT</td></tr>
+<tr><td><b>LangChain</b></td><td class="src">langchain-ai/langchain</td><td>✅ 存在</td><td>多包分别发版（langchain 1.4.8 / langchain-core 1.7.4）</td><td>MIT</td></tr>
 <tr><td><b>LangGraph</b></td><td class="src">langchain-ai/langgraph</td><td>✅ 存在</td><td>1.2.19</td><td>MIT</td></tr>
 <tr><td><b>Pydantic-AI</b></td><td class="src">pydantic/pydantic-ai</td><td>✅ 存在</td><td>v2.65.0</td><td>MIT</td></tr>
 <tr><td><b>OpenClaw</b></td><td class="src">openclaw/openclaw</td><td>✅ 存在</td><td>v2026.10.3</td><td>MIT</td></tr>
@@ -307,13 +307,13 @@
 <p><b>机制</b>　编排原语齐备：subgraph（图本身是 Runnable，子图 checkpoint 与父图共用同一 thread 存储）、<code>Send</code> 动态并行（map-reduce）、<code>Command</code> 跳转。<br><b>证据</b>　<code>types.py</code>；supervisor/swarm 编排器在 monorepo 内<b>未实现</b>（仅测试 fixture 命中）。<br><b>判断</b>　只有积木、没有编排器——官方路径是独立仓 <code>langgraph-supervisor-py</code> / <code>langgraph-swarm-py</code> + 本库原语；<code>create_react_agent</code> 已标 deprecated，能力上移至 langchain 仓的 <code>create_agent</code>。</p>
 
 <h4>⑤ HITL：✅ 有，且与崩溃恢复共用一套持久化机制</h4>
-<p><b>机制</b>　<code>interrupt(value)</code>（<a href="https://github.com/langchain-ai/langgraph/blob/3c916d750575b22c464790e9774494d810ccd322/libs/langgraph/langgraph/types.py#L903"><code>types.py</code></a>）抛出中断，被 runner 的 <code>commit()</code> 捕获，把中断点当作未完成写入存进状态——"等待人工"与"进程崩溃"在存储层是同一种东西；<code>Command(resume=...)</code> 时节点从头重放，已答过的审批不重复问；另支持 <code>response_schema</code> 类型化审批表单。<br><b>证据</b>　<code>types.py</code>、<code>pregel/_runner.py</code>（permalink 见上）。<br><b>判断</b>　恢复语义统一；坑写进文档——节点重跑意味着 interrupt 前代码会再执行（副作用须幂等），不可用 try/except 包 interrupt。</p>
+<p><b>机制</b>　<code>interrupt(value)</code>（<code>types.py</code>）抛出中断，被 runner 的 <code>commit()</code> 捕获，把中断点当作未完成写入存进状态——"等待人工"与"进程崩溃"在存储层是同一种东西；<code>Command(resume=...)</code> 时节点从头重放，已答过的审批不重复问；另支持 <code>response_schema</code> 类型化审批表单。<br><b>证据</b>　<a href="https://github.com/langchain-ai/langgraph/blob/3c916d750575b22c464790e9774494d810ccd322/libs/langgraph/langgraph/types.py#L903"><code>types.py</code></a>、<a href="https://github.com/langchain-ai/langgraph/blob/3c916d750575b22c464790e9774494d810ccd322/libs/langgraph/langgraph/pregel/_runner.py#L575-L590"><code>pregel/_runner.py</code></a>。<br><b>判断</b>　恢复语义统一；坑写进文档——节点重跑意味着 interrupt 前代码会再执行（副作用须幂等），不可用 try/except 包 interrupt。</p>
 
 <h4>⑥ 可观测性：❌ 原生 OTel 未实现，走 callback 体系自建</h4>
 <p><b>机制</b>　观测走 langchain-core callback 体系接自建后端（Langfuse 等有现成集成）；评测集成不内置。<br><b>证据</b>　OSS 层无原生 OTel exporter——全仓 grep 仅测试文件命中；主包 deps 不含 LangSmith。<br><b>判断</b>　原生 OTel <b>未实现</b>；LangSmith 完全可选，不配置即无外发。</p>
 
 <h4>⑦ 部署与许可证：✅ 引擎全 MIT，可完全自托管</h4>
-<p><b>机制</b>　七包全 MIT（逐一核对 pyproject）；生产最小组合 = <code>langgraph + langgraph-checkpoint-postgres</code> + 自写 ASGI 入口；沙箱不内置（库层不直接执行环境操作）。<br><b>证据</b>　API server 本体在独立包 <code>langgraph-api</code>（<code>langgraph-cli</code> 的 <code>up</code> import 之）。<br><b>判断</b>　自托管完整；供应链注记——langchain-community 包正在停维护收缩（sunset），依赖只走主线包。</p>
+<p><b>机制</b>　七包全 MIT（逐一核对 pyproject）；生产最小组合 = <code>langgraph + langgraph-checkpoint-postgres</code> + 自写 ASGI 入口；沙箱不内置（库层不直接执行环境操作）。<br><b>证据</b>　API server 本体不在本仓库——<code>langgraph-cli</code> 的 <code>up</code>/<code>dev</code> 命令以 extras 安装独立 PyPI 包 <code>langgraph-api</code> 并 import 它启动本地 server（<code>langgraph_cli/cli.py</code>；该包不在本 repo，未随七包核 MIT）。<br><b>判断</b>　自托管完整；供应链注记——langchain-community 包正在停维护收缩（sunset），依赖只走主线包。</p>
 
 <h3 id="sec-3-2">3.2 Codex CLI（Runtime/Harness 层代表）：内核级沙箱 + 企业治理面</h3>
 
